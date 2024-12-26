@@ -2,65 +2,57 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const AddItem = () => {
+  // States for form fields
   const [name, setName] = useState('');
   const [modelNumber, setModelNumber] = useState('');
   const [brandId, setBrandId] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [brands, setBrands] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true); // Track loading state
+  const [loading, setLoading] = useState(true); // To show loading message while fetching data
 
-  // Fetch brands and categories when the component loads
-useEffect(() => {
-  const fetchData = async () => {
-    try {
-      setLoading(true);  // Optional: set loading state
-      const [brandsRes, categoriesRes] = await Promise.all([
-        axios.get('http://localhost:5257/api/brands'),
-        axios.get('http://localhost:5257/api/categories'),
-      ]);
+  // Fetch brands and categories when the component mounts
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true); // Start loading
 
-      console.log('Brands:', brandsRes.data);
-      console.log('Categories:', categoriesRes.data);
+        // Fetch both brands and categories concurrently
+        const [brandsRes, categoriesRes] = await Promise.all([
+          axios.get('http://localhost:5257/api/brands'),
+          axios.get('http://localhost:5257/api/categories'),
+        ]);
 
-      // Check if the response data is an array and log it
-      if (Array.isArray(brandsRes.data)) {
+        // Handle the data and ensure the correct format
         setBrands(brandsRes.data);
-      } else {
-        console.error('Brands data is not in the correct format:', brandsRes.data);
-      }
-
-      if (Array.isArray(categoriesRes.data)) {
         setCategories(categoriesRes.data);
-      } else {
-        console.error('Categories data is not in the correct format:', categoriesRes.data);
+
+        setLoading(false); // Stop loading
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        setLoading(false); // Stop loading if there was an error
       }
+    };
 
-      setLoading(false);  // Optional: set loading state to false after data is fetched
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      setLoading(false);  // Optional: set loading state to false after error
-    }
-  };
-
-  fetchData();
-}, []);
-
-  
+    fetchData();
+  }, []);
 
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     const newItem = {
       name,
       model_number: modelNumber,
-      brand_id: brandId,
-      category_id: categoryId,
+      brand_id: brandId, // We send the brand id, not the name
+      category_id: categoryId, // We send the category id, not the name
     };
+
     try {
-      const response = await axios.post('http://localhost:5257/api/items', newItem); // Replace with your add-item API endpoint
+      // Post request to the API to add the new item
+      const response = await axios.post('http://localhost:5257/api/items', newItem);
       alert('Item added successfully!');
-      console.log(response.data);
+      console.log('Item added:', response.data);
     } catch (error) {
       console.error('Error adding item:', error);
       alert('Failed to add item.');
@@ -71,9 +63,10 @@ useEffect(() => {
     <div style={{ padding: '20px', maxWidth: '500px', margin: '0 auto' }}>
       <h2>Add Item</h2>
       {loading ? (
-        <p>Loading...</p> // Show loading message if data is still being fetched
+        <p>Loading...</p> // Show loading message while brands and categories are being fetched
       ) : (
         <form onSubmit={handleSubmit}>
+          {/* Name Field */}
           <div style={{ marginBottom: '15px' }}>
             <label htmlFor="name" style={{ display: 'block', marginBottom: '5px' }}>Name:</label>
             <input
@@ -82,10 +75,11 @@ useEffect(() => {
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
-              autoComplete="name"
               style={{ width: '100%', padding: '8px' }}
             />
           </div>
+
+          {/* Model Number Field */}
           <div style={{ marginBottom: '15px' }}>
             <label htmlFor="modelNumber" style={{ display: 'block', marginBottom: '5px' }}>Model Number:</label>
             <input
@@ -98,6 +92,7 @@ useEffect(() => {
             />
           </div>
 
+          {/* Brand Dropdown */}
           <div style={{ marginBottom: '15px' }}>
             <label htmlFor="brandId" style={{ display: 'block', marginBottom: '5px' }}>Brand:</label>
             <select
@@ -108,16 +103,15 @@ useEffect(() => {
               style={{ width: '100%', padding: '8px' }}
             >
               <option value="">Select a brand</option>
-              {brands.length === 0 ? (
-                <option value="">Loading brands...</option> // Show a loading option if brands are still being fetched
-              ) : (
-                brands.map((brand, index) => (
-                  <option key={brand.id || index} value={brand.id}>{brand.name}</option> // Ensure unique key
-                ))
-              )}
+              {brands.map((brand) => (
+                <option key={brand.id} value={brand.id}>
+                  {brand.name} {/* Display brand name but use the id in the value */}
+                </option>
+              ))}
             </select>
           </div>
 
+          {/* Category Dropdown */}
           <div style={{ marginBottom: '15px' }}>
             <label htmlFor="categoryId" style={{ display: 'block', marginBottom: '5px' }}>Category:</label>
             <select
@@ -128,16 +122,15 @@ useEffect(() => {
               style={{ width: '100%', padding: '8px' }}
             >
               <option value="">Select a category</option>
-              {categories.length === 0 ? (
-                <option value="">Loading categories...</option> // Show a loading option if categories are still being fetched
-              ) : (
-                categories.map((category, index) => (
-                  <option key={category.id || index} value={category.id}>{category.name}</option> // Ensure unique key
-                ))
-              )}
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name} {/* Display category name but use the id in the value */}
+                </option>
+              ))}
             </select>
           </div>
 
+          {/* Submit Button */}
           <button
             type="submit"
             style={{ padding: '10px 15px', backgroundColor: '#007BFF', color: '#fff', border: 'none', borderRadius: '5px' }}
