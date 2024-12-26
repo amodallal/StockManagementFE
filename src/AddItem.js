@@ -11,27 +11,41 @@ const AddItem = () => {
   const [loading, setLoading] = useState(true); // Track loading state
 
   // Fetch brands and categories when the component loads
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true); // Set loading to true when fetching data
-        const [brandsRes, categoriesRes] = await Promise.all([
-          axios.get('http://localhost:5257/api/brands'), // Full URL to match your backend
-          axios.get('http://localhost:5257/api/categories'),
-        ]);
-        console.log('Brands:', brandsRes.data); // Check if data is correct
-        console.log('Categories:', categoriesRes.data);
+useEffect(() => {
+  const fetchData = async () => {
+    try {
+      setLoading(true);  // Optional: set loading state
+      const [brandsRes, categoriesRes] = await Promise.all([
+        axios.get('http://localhost:5257/api/brands'),
+        axios.get('http://localhost:5257/api/categories'),
+      ]);
+
+      console.log('Brands:', brandsRes.data);
+      console.log('Categories:', categoriesRes.data);
+
+      // Check if the response data is an array and log it
+      if (Array.isArray(brandsRes.data)) {
         setBrands(brandsRes.data);
-        setCategories(categoriesRes.data);
-        setLoading(false); // Set loading to false when data is fetched
-      } catch (error) {
-        console.error('Error fetching data:', error);
-        alert('Failed to fetch brands or categories.');
-        setLoading(false);
+      } else {
+        console.error('Brands data is not in the correct format:', brandsRes.data);
       }
-    };
-    fetchData();
-  }, []);
+
+      if (Array.isArray(categoriesRes.data)) {
+        setCategories(categoriesRes.data);
+      } else {
+        console.error('Categories data is not in the correct format:', categoriesRes.data);
+      }
+
+      setLoading(false);  // Optional: set loading state to false after data is fetched
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      setLoading(false);  // Optional: set loading state to false after error
+    }
+  };
+
+  fetchData();
+}, []);
+
   
 
   // Handle form submission
@@ -68,10 +82,11 @@ const AddItem = () => {
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
+              autoComplete="name"
               style={{ width: '100%', padding: '8px' }}
             />
           </div>
-
+test
           <div style={{ marginBottom: '15px' }}>
             <label htmlFor="modelNumber" style={{ display: 'block', marginBottom: '5px' }}>Model Number:</label>
             <input
