@@ -10,7 +10,6 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<Login />} />
-        <Route path="/stocktransfer" element={<StockTransfer />} />
         <Route path="/AddItem" element={<AddItem />} />
       </Routes>
     </Router>

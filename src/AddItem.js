@@ -1,99 +1,139 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
-const AddItems = () => {
-  // State for form fields
-  const [itemName, setItemName] = useState('');
+const AddItem = () => {
+  const [name, setName] = useState('');
   const [modelNumber, setModelNumber] = useState('');
-  const [brand, setBrand] = useState('');
-  const [category, setCategory] = useState('');
+  const [brandId, setBrandId] = useState('');
+  const [categoryId, setCategoryId] = useState('');
+  const [brands, setBrands] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true); // Track loading state
 
-  // Example options for dropdowns
-  const brandOptions = ['Apple', 'Samsung', 'Sony', 'LG', 'Dell'];
-  const categoryOptions = ['Tablet', 'Phone'];
+  // Fetch brands and categories when the component loads
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true); // Set loading to true when fetching data
+        const [brandsRes, categoriesRes] = await Promise.all([
+          axios.get('http://localhost:5257/api/brands'), // Full URL to match your backend
+          axios.get('http://localhost:5257/api/categories'),
+        ]);
+        console.log('Brands:', brandsRes.data); // Check if data is correct
+        console.log('Categories:', categoriesRes.data);
+        setBrands(brandsRes.data);
+        setCategories(categoriesRes.data);
+        setLoading(false); // Set loading to false when data is fetched
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        alert('Failed to fetch brands or categories.');
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+  
 
   // Handle form submission
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    alert(`Item Details:\nName: ${itemName}\nModel: ${modelNumber}\nBrand: ${brand}\nCategory: ${category}`);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const newItem = {
+      name,
+      model_number: modelNumber,
+      brand_id: brandId,
+      category_id: categoryId,
+    };
+    try {
+      const response = await axios.post('http://localhost:5257/api/items', newItem); // Replace with your add-item API endpoint
+      alert('Item added successfully!');
+      console.log(response.data);
+    } catch (error) {
+      console.error('Error adding item:', error);
+      alert('Failed to add item.');
+    }
   };
 
   return (
-    <div style={{ padding: '20px', maxWidth: '400px', margin: '0 auto' }}>
-      <h2>Add New Item</h2>
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: '15px' }}>
-          <label htmlFor="itemName" style={{ display: 'block', marginBottom: '5px' }}>
-            Item Name:
-          </label>
-          <input
-            type="text"
-            id="itemName"
-            value={itemName}
-            onChange={(e) => setItemName(e.target.value)}
-            style={{ width: '100%', padding: '8px' }}
-          />
-        </div>
+    <div style={{ padding: '20px', maxWidth: '500px', margin: '0 auto' }}>
+      <h2>Add Item</h2>
+      {loading ? (
+        <p>Loading...</p> // Show loading message if data is still being fetched
+      ) : (
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: '15px' }}>
+            <label htmlFor="name" style={{ display: 'block', marginBottom: '5px' }}>Name:</label>
+            <input
+              type="text"
+              id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              style={{ width: '100%', padding: '8px' }}
+            />
+          </div>
 
-        <div style={{ marginBottom: '15px' }}>
-          <label htmlFor="modelNumber" style={{ display: 'block', marginBottom: '5px' }}>
-            Model Number:
-          </label>
-          <input
-            type="text"
-            id="modelNumber"
-            value={modelNumber}
-            onChange={(e) => setModelNumber(e.target.value)}
-            style={{ width: '100%', padding: '8px' }}
-          />
-        </div>
+          <div style={{ marginBottom: '15px' }}>
+            <label htmlFor="modelNumber" style={{ display: 'block', marginBottom: '5px' }}>Model Number:</label>
+            <input
+              type="text"
+              id="modelNumber"
+              value={modelNumber}
+              onChange={(e) => setModelNumber(e.target.value)}
+              required
+              style={{ width: '100%', padding: '8px' }}
+            />
+          </div>
 
-        <div style={{ marginBottom: '15px' }}>
-          <label htmlFor="brand" style={{ display: 'block', marginBottom: '5px' }}>
-            Brand:
-          </label>
-          <select
-            id="brand"
-            value={brand}
-            onChange={(e) => setBrand(e.target.value)}
-            style={{ width: '100%', padding: '8px' }}
+          <div style={{ marginBottom: '15px' }}>
+            <label htmlFor="brandId" style={{ display: 'block', marginBottom: '5px' }}>Brand:</label>
+            <select
+              id="brandId"
+              value={brandId}
+              onChange={(e) => setBrandId(e.target.value)}
+              required
+              style={{ width: '100%', padding: '8px' }}
+            >
+              <option value="">Select a brand</option>
+              {brands.length === 0 ? (
+                <option value="">Loading brands...</option> // Show a loading option if brands are still being fetched
+              ) : (
+                brands.map((brand, index) => (
+                  <option key={brand.id || index} value={brand.id}>{brand.name}</option> // Ensure unique key
+                ))
+              )}
+            </select>
+          </div>
+
+          <div style={{ marginBottom: '15px' }}>
+            <label htmlFor="categoryId" style={{ display: 'block', marginBottom: '5px' }}>Category:</label>
+            <select
+              id="categoryId"
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+              required
+              style={{ width: '100%', padding: '8px' }}
+            >
+              <option value="">Select a category</option>
+              {categories.length === 0 ? (
+                <option value="">Loading categories...</option> // Show a loading option if categories are still being fetched
+              ) : (
+                categories.map((category, index) => (
+                  <option key={category.id || index} value={category.id}>{category.name}</option> // Ensure unique key
+                ))
+              )}
+            </select>
+          </div>
+
+          <button
+            type="submit"
+            style={{ padding: '10px 15px', backgroundColor: '#007BFF', color: '#fff', border: 'none', borderRadius: '5px' }}
           >
-            <option value="">Select a brand</option>
-            {brandOptions.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div style={{ marginBottom: '15px' }}>
-          <label htmlFor="category" style={{ display: 'block', marginBottom: '5px' }}>
-            Category:
-          </label>
-          <select
-            id="category"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            style={{ width: '100%', padding: '8px' }}
-          >
-            <option value="">Select a category</option>
-            {categoryOptions.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <button
-          type="submit"
-          style={{ padding: '10px 15px', backgroundColor: '#007BFF', color: '#fff', border: 'none', borderRadius: '5px' }}
-        >
-          Submit
-        </button>
-      </form>
+            Submit
+          </button>
+        </form>
+      )}
     </div>
   );
 };
 
-export default AddItems;
+export default AddItem;
