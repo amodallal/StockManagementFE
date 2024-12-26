@@ -13,11 +13,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\amodallal\\my-app\\StockManagement\\StockManagement.csproj",
+      "projectUniqueName": "C:\\Users\\amodallal\\StockManagementFE\\StockManagementFE\\StockManagement\\StockManagement.csproj",
       "projectName": "StockManagement",
-      "projectPath": "C:\\Users\\amodallal\\my-app\\StockManagement\\StockManagement.csproj",
+      "projectPath": "C:\\Users\\amodallal\\StockManagementFE\\StockManagementFE\\StockManagement\\StockManagement.csproj",
       "packagesPath": "C:\\Users\\amodallal\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\amodallal\\my-app\\StockManagement\\obj\\",
+      "outputPath": "C:\\Users\\amodallal\\StockManagementFE\\StockManagementFE\\StockManagement\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\amodallal\\AppData\\Roaming\\NuGet\\NuGet.Config",
