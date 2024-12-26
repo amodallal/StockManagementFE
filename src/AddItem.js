@@ -86,7 +86,6 @@ useEffect(() => {
               style={{ width: '100%', padding: '8px' }}
             />
           </div>
-test
           <div style={{ marginBottom: '15px' }}>
             <label htmlFor="modelNumber" style={{ display: 'block', marginBottom: '5px' }}>Model Number:</label>
             <input
