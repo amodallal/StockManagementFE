@@ -5,18 +5,17 @@ const AddItem = () => {
   // States for form fields
   const [name, setName] = useState('');
   const [modelNumber, setModelNumber] = useState('');
-  const [Barcode, setBarcode] = useState(''); // Barcode state
   const [brandId, setBrandId] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [brands, setBrands] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // To show loading message while fetching data
 
   // Fetch brands and categories when the component mounts
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setLoading(true);
+        setLoading(true); // Start loading
 
         // Fetch both brands and categories concurrently
         const [brandsRes, categoriesRes] = await Promise.all([
@@ -28,10 +27,10 @@ const AddItem = () => {
         setBrands(brandsRes.data);
         setCategories(categoriesRes.data);
 
-        setLoading(false);
+        setLoading(false); // Stop loading
       } catch (error) {
         console.error('Error fetching data:', error);
-        setLoading(false);
+        setLoading(false); // Stop loading if there was an error
       }
     };
 
@@ -44,10 +43,9 @@ const AddItem = () => {
 
     const newItem = {
       name: name,
-      modelNumber: modelNumber,
-      BrandId: brandId,
-      CategoryId: categoryId,
-      barcode: Barcode, // Send the barcode
+      model_number: modelNumber,
+      brand_id: brandId, // We send the brand id, not the name
+      category_id: categoryId, // We send the category id, not the name
     };
 
     try {
@@ -65,7 +63,7 @@ const AddItem = () => {
     <div style={{ padding: '20px', maxWidth: '500px', margin: '0 auto' }}>
       <h2>Add Item</h2>
       {loading ? (
-        <p>Loading...</p>
+        <p>Loading...</p> // Show loading message while brands and categories are being fetched
       ) : (
         <form onSubmit={handleSubmit}>
           {/* Name Field */}
@@ -94,19 +92,6 @@ const AddItem = () => {
             />
           </div>
 
-          {/* Barcode Field */}
-          <div style={{ marginBottom: '15px' }}>
-            <label htmlFor="barcode" style={{ display: 'block', marginBottom: '5px' }}>Barcode:</label>
-            <input
-              type="text"
-              id="barcode"
-              value={Barcode}
-              onChange={(e) => setBarcode(e.target.value)}
-              required
-              style={{ width: '100%', padding: '8px' }}
-            />
-          </div>
-
           {/* Brand Dropdown */}
           <div style={{ marginBottom: '15px' }}>
             <label htmlFor="brandId" style={{ display: 'block', marginBottom: '5px' }}>Brand:</label>
@@ -120,7 +105,7 @@ const AddItem = () => {
               <option value="">Select a brand</option>
               {brands.map((brand) => (
                 <option key={brand.brandId} value={brand.brandId}>
-                  {brand.brandName}
+                  {brand.brandName} {/* Display brand name but use the id in the value */}
                 </option>
               ))}
             </select>
@@ -139,7 +124,7 @@ const AddItem = () => {
               <option value="">Select a category</option>
               {categories.map((category) => (
                 <option key={category.categoryId} value={category.categoryId}>
-                  {category.categoryName}
+                  {category.categoryName} {/* Display category name but use the id in the value */}
                 </option>
               ))}
             </select>
