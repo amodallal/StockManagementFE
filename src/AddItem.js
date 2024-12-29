@@ -20,6 +20,7 @@ const AddItem = () => {
         const [brandsRes, categoriesRes] = await Promise.all([
           axios.get('http://localhost:5257/api/brands'),
           axios.get('http://localhost:5257/api/categories'),
+          
         ]);
         setBrands(brandsRes.data);
         setCategories(categoriesRes.data);
@@ -62,6 +63,14 @@ const AddItem = () => {
   const handleDeleteItem = (index) => {
     const filteredItems = items.filter((_, i) => i !== index);
     setItems(filteredItems);
+    setName('');
+    setModelNumber('');
+    setBarcode('');
+    setBrandId('');
+    setCategoryId('');
+    setIsEditing(null);
+
+    
   };
 
   const handleEditItem = (index) => {
@@ -133,16 +142,7 @@ const AddItem = () => {
                 style={{ width: '100%', padding: '6px', fontSize: '14px' }}
               />
             </div>
-            <div>
-              <label htmlFor="barcode" style={{ display: 'block', marginBottom: '5px' }}>Barcode:</label>
-              <input
-                type="text"
-                id="barcode"
-                value={barcode}
-                onChange={(e) => setBarcode(e.target.value)}
-                style={{ width: '100%', padding: '6px', fontSize: '14px' }}
-              />
-            </div>
+         
             <div>
               <label htmlFor="brandId" style={{ display: 'block', marginBottom: '5px' }}>Brand:</label>
               <select
@@ -176,6 +176,16 @@ const AddItem = () => {
                   </option>
                 ))}
               </select>
+            </div>
+             <div>
+              <label htmlFor="barcode" style={{ display: 'none', marginBottom: '5px' }}>Barcode:</label>
+              <input
+                type="text"
+                id="barcode"
+                value={barcode}
+                onChange={(e) => setBarcode(e.target.value)}
+                style={{ display: 'none' , width: '100%', padding: '6px', fontSize: '14px' }}
+              />
             </div>
             <div style={{ gridColumn: '1 / -1' }}>
               <button
