@@ -4,7 +4,7 @@ import './styles.css';
 
 const AddBrand = () => {
   const [brandName, setBrandName] = useState('');
-  const [brands, setBrands] = useState([]);  // Newly added brands state
+  const [brands, setBrands] = useState([]); // Newly added brands state
   const [databaseBrands, setDatabaseBrands] = useState([]); // Brands from the database
   const [isEditing, setIsEditing] = useState(null);
 
@@ -13,7 +13,7 @@ const AddBrand = () => {
     const fetchDatabaseBrands = async () => {
       try {
         const response = await axios.get('http://localhost:5257/api/brands');
-        setDatabaseBrands(response.data);
+        setDatabaseBrands(response.data); // Ensure BrandId is present in the response
       } catch (error) {
         console.error('Error fetching database brands:', error);
       }
@@ -28,21 +28,18 @@ const AddBrand = () => {
     }
 
     try {
-      // Check if the brand already exists in the local brands state
       const existingBrandInState = brands.find((brand) => brand.brandName === brandName);
       if (existingBrandInState) {
         alert('This brand already exists in the added list. Please use a different name.');
         return;
       }
 
-      // Check if the brand exists in the database
       const existingBrandInDB = databaseBrands.find((brand) => brand.brandName === brandName);
       if (existingBrandInDB) {
         alert('This brand already exists in the database. Please use a different name.');
         return;
       }
 
-      // If brand does not exist in state or database, add it to the list
       const newBrand = { brandName };
 
       if (isEditing !== null) {
@@ -62,11 +59,27 @@ const AddBrand = () => {
     }
   };
 
-  const handleDeleteBrand = (index) => {
-    const filteredBrands = brands.filter((_, i) => i !== index);
-    setBrands(filteredBrands);
-    setIsEditing(null);
-    setBrandName('');
+  const handleDeleteBrand = async (brandId) => {
+    console.log('Attempting to delete brand with ID:', brandId);
+
+    if (!brandId) {
+      alert('Brand ID is missing.');
+      return;
+    }
+
+    try {
+      // Delete the brand from the backend
+      await axios.delete(`http://localhost:5257/api/brands/${brandId}`);
+
+      // Remove the brand from the databaseBrands list after successful deletion
+      const updatedDatabaseBrands = databaseBrands.filter((brand) => brand.brandId !== brandId);
+      setDatabaseBrands(updatedDatabaseBrands);
+
+      alert('Brand deleted successfully!');
+    } catch (error) {
+      console.error('Error deleting brand:', error);
+      alert('Failed to delete brand.');
+    }
   };
 
   const handleEditBrand = (index) => {
@@ -77,18 +90,14 @@ const AddBrand = () => {
 
   const handleSubmit = async () => {
     try {
-      // Submit newly added brands to the database
       await axios.post('http://localhost:5257/api/brands/bulk', brands);
       alert('Brands submitted successfully!');
 
-      // After submitting, clear the local brands list and re-fetch the updated database brands
       setBrands([]);
       setBrandName('');
-      
-      // Re-fetch the updated list of brands from the database
+
       const response = await axios.get('http://localhost:5257/api/brands');
       setDatabaseBrands(response.data);
-
     } catch (error) {
       console.error('Error submitting brands:', error);
       alert('Failed to submit brands.');
@@ -132,27 +141,12 @@ const AddBrand = () => {
             <thead>
               <tr>
                 <th>Brand Name</th>
-                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {brands.map((brand, index) => (
                 <tr key={index}>
                   <td>{brand.brandName}</td>
-                  <td>
-                    <button
-                      onClick={() => handleEditBrand(index)}
-                      className="btn btn-warning btn-small"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDeleteBrand(index)}
-                      className="btn btn-danger btn-small"
-                    >
-                      Delete
-                    </button>
-                  </td>
                 </tr>
               ))}
             </tbody>
@@ -167,12 +161,21 @@ const AddBrand = () => {
             <thead>
               <tr>
                 <th>Brand Name</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {databaseBrands.map((brand, index) => (
-                <tr key={index}>
+              {databaseBrands.map((brand) => (
+                <tr key={brand.brandId}>
                   <td>{brand.brandName}</td>
+                  <td>
+                    <button
+                      onClick={() => handleDeleteBrand(brand.brandId)} // Ensure BrandId is passed
+                      className="btn btn-danger btn-small"
+                    >
+                      Delete
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
