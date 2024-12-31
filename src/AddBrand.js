@@ -82,11 +82,11 @@ const AddBrand = () => {
     }
   };
 
-  const handleEditBrand = (index) => {
-    const brandToEdit = brands[index];
-    setBrandName(brandToEdit.brandName);
-    setIsEditing(index);
-  };
+  //const handleEditBrand = (index) => {
+//const brandToEdit = brands[index];
+    //setBrandName(brandToEdit.brandName);
+    //setIsEditing(index);
+ // };
 
   const handleSubmit = async () => {
     try {
