@@ -11,7 +11,7 @@ const AddItemDetails = () => {
   const [cost, setCost] = useState('');
   const [descriptionId, setDescriptionId] = useState('');
   const [supplierId, setSupplierId] = useState('');
-  const [quantity, setQuantity] = useState('');
+  const [quantity, setQuantity] = useState('1');
   const [items, setItems] = useState([]);
   const [descriptions, setDescriptions] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
@@ -58,15 +58,15 @@ const AddItemDetails = () => {
       alert('Item detail added successfully!');
 
       // Clear form fields
-      setItemId('');
+      //setItemId('');
       setSerialNumber('');
       setImei1('');
       setImei2('');
-      setSalePrice('');
-      setCost('');
-      setDescriptionId('');
-      setSupplierId('');
-      setQuantity('');
+      //setSalePrice('');
+      //setCost('');
+      //setDescriptionId('');
+      //setSupplierId('');
+      setQuantity('1');
     } catch (error) {
       console.error('Error adding item detail:', error);
       alert('Failed to add item detail.');
@@ -195,7 +195,7 @@ const AddItemDetails = () => {
           </select>
         </div>
 
-        <div className="form-group">
+        <div className="form-group" style={{ display: 'none' }}>
           <label htmlFor="quantity">Quantity:</label>
           <input
             type="number"
@@ -203,6 +203,7 @@ const AddItemDetails = () => {
             value={quantity}
             onChange={(e) => setQuantity(e.target.value)}
             required
+            
           />
         </div>
 
