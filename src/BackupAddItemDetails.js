@@ -11,12 +11,17 @@ const AddItemDetails = () => {
   const [cost, setCost] = useState('');
   const [descriptionId, setDescriptionId] = useState('');
   const [supplierId, setSupplierId] = useState('');
-  const [quantity, setQuantity] = useState('');
+  const [quantity, setQuantity] = useState('1');
+  const [dateReceived, setDateReceived] = useState('');
   const [items, setItems] = useState([]);
   const [descriptions, setDescriptions] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
 
   useEffect(() => {
+    // Set today's date for the DateReceived state
+    const today = new Date().toISOString().split('T')[0];  // Get today's date in YYYY-MM-DD format
+    setDateReceived(today);
+
     const fetchData = async () => {
       try {
         const [itemsRes, suppliersRes, descriptionsRes] = await Promise.all([
@@ -33,10 +38,10 @@ const AddItemDetails = () => {
       }
     };
     fetchData();
-  }, []);
+  }, []);  // Empty dependency array means this will only run once when the component mounts
 
   const handleSubmit = async () => {
-    if (!itemId || !serialNumber || !salePrice || !quantity || !descriptionId || !supplierId) {
+    if (!itemId || !imei1 || !salePrice || !quantity || !descriptionId || !supplierId || !dateReceived) {
       alert('Please fill in all required fields.');
       return;
     }
@@ -51,6 +56,7 @@ const AddItemDetails = () => {
       descriptionId,
       supplierId,
       quantity,
+      dateReceived, // Add the DateReceived to the newItemDetail object
     };
 
     try {
@@ -58,15 +64,15 @@ const AddItemDetails = () => {
       alert('Item detail added successfully!');
 
       // Clear form fields
-      setItemId('');
       setSerialNumber('');
       setImei1('');
       setImei2('');
-      setSalePrice('');
-      setCost('');
-      setDescriptionId('');
-      setSupplierId('');
-      setQuantity('');
+      //setSalePrice('');
+      //setCost('');
+      //setDescriptionId('');
+      //setSupplierId('');
+      setQuantity('1');
+      setDateReceived(new Date().toISOString().split('T')[0]);  // Reset to today's date on form submission
     } catch (error) {
       console.error('Error adding item detail:', error);
       alert('Failed to add item detail.');
@@ -116,7 +122,7 @@ const AddItemDetails = () => {
             id="serialNumber"
             value={serialNumber}
             onChange={(e) => setSerialNumber(e.target.value)}
-            required
+           //required
           />
         </div>
 
@@ -147,7 +153,7 @@ const AddItemDetails = () => {
             id="salePrice"
             value={salePrice}
             onChange={(e) => setSalePrice(e.target.value)}
-            required
+            //required
           />
         </div>
 
@@ -196,6 +202,17 @@ const AddItemDetails = () => {
         </div>
 
         <div className="form-group">
+          <label htmlFor="dateReceived">Date Received:</label>
+          <input
+            type="date"
+            id="dateReceived"
+            value={dateReceived}
+            onChange={(e) => setDateReceived(e.target.value)}
+            required
+          />
+        </div>
+
+        <div className="form-group" style={{ display: 'none' }}>
           <label htmlFor="quantity">Quantity:</label>
           <input
             type="number"
