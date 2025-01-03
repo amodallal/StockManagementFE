@@ -172,6 +172,7 @@ const AddItemDetails = () => {
             value={imei1}
             onChange={(e) => setImei1(e.target.value)}
             placeholder="Scan barcode here"
+            autoComplete='off'
             ref={imeiInputRef} // Attach ref to the IMEI 1 input field
           />
         </div>

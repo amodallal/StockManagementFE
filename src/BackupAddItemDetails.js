@@ -56,6 +56,15 @@ const AddItemDetails = () => {
     const handleBarcodeInput = (event) => {
       if (event.key === 'Enter') {
         // When 'Enter' key is pressed, assume the barcode is fully scanned
+        if (barcodeData.length !== 15) {
+          console.log('Invalid IMEI length:', barcodeData.length);
+          alert('IMEI must be exactly 15 digits');
+          setBarcodeData('');
+          setImei1('');
+
+          return; // Don't proceed with the request if the IMEI length is not 15
+        }
+  
          setImei1(barcodeData);
          
         handleSubmit()
@@ -85,7 +94,6 @@ const AddItemDetails = () => {
     if (!itemId || !imei1 || !salePrice ||  !cost || !quantity || !descriptionId || !supplierId || !dateReceived) {
       
       alert('Please fill in all required fields.');
-
       return;
     }
     
@@ -104,6 +112,7 @@ const AddItemDetails = () => {
 
     try {
       console.log('Scanned Barcode:', barcodeData);
+      
       await axios.post('http://localhost:5257/api/ItemDetails', newItemDetail);
      // alert('Item detail added successfully!');
 
