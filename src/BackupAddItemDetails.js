@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import './styles.css';
 
@@ -16,10 +16,15 @@ const AddItemDetails = () => {
   const [items, setItems] = useState([]);
   const [descriptions, setDescriptions] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
+  const [barcodeData, setBarcodeData] = useState('');
+
+  // Ref for the IMEI 1 input field
+  const imeiInputRef = useRef(null);
+  const debounceTimerRef = useRef(null);
 
   useEffect(() => {
     // Set today's date for the DateReceived state
-    const today = new Date().toISOString().split('T')[0];  // Get today's date in YYYY-MM-DD format
+    const today = new Date().toISOString().split('T')[0];
     setDateReceived(today);
 
     const fetchData = async () => {
@@ -38,14 +43,52 @@ const AddItemDetails = () => {
       }
     };
     fetchData();
-  }, []);  // Empty dependency array means this will only run once when the component mounts
+
+    // Automatically focus the IMEI field when the component mounts
+    if (imeiInputRef.current) {
+      imeiInputRef.current.focus();
+    }
+  }, []);
+
+  useEffect(() => {
+    
+    // Listen for barcode scanner input
+    const handleBarcodeInput = (event) => {
+      if (event.key === 'Enter') {
+        // When 'Enter' key is pressed, assume the barcode is fully scanned
+         setImei1(barcodeData);
+         
+        handleSubmit()
+        setBarcodeData(''); // Reset barcode data after submission
+      } else if (event.key !== 'Backspace') {  // Ignore backspace keys
+        setBarcodeData((prev) => prev + event.key);
+      }
+
+      // Reset barcode data on first scan to avoid strange characters
+      if (barcodeData.length === 0) {
+        clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = setTimeout(() => {
+          setBarcodeData('');
+        }, 300); // Reset after a short delay (debounce)
+      }
+    };
+
+    window.addEventListener('keydown', handleBarcodeInput);
+
+    return () => {
+      window.removeEventListener('keydown', handleBarcodeInput);
+      clearTimeout(debounceTimerRef.current);  // Clear any existing timeouts
+    };
+  }, [imei1]);
 
   const handleSubmit = async () => {
-    if (!itemId || !imei1 || !salePrice || !quantity || !descriptionId || !supplierId || !dateReceived) {
+    if (!itemId || !imei1 || !salePrice ||  !cost || !quantity || !descriptionId || !supplierId || !dateReceived) {
+      
       alert('Please fill in all required fields.');
+
       return;
     }
-
+    
     const newItemDetail = {
       itemId,
       serialNumber,
@@ -56,42 +99,29 @@ const AddItemDetails = () => {
       descriptionId,
       supplierId,
       quantity,
-      dateReceived, // Add the DateReceived to the newItemDetail object
+      dateReceived,
     };
 
     try {
+      console.log('Scanned Barcode:', barcodeData);
       await axios.post('http://localhost:5257/api/ItemDetails', newItemDetail);
-      alert('Item detail added successfully!');
+     // alert('Item detail added successfully!');
 
-      // Clear form fields
+      // Clear form fields after submission
       setSerialNumber('');
       setImei1('');
       setImei2('');
-      //setSalePrice('');
-      //setCost('');
-      //setDescriptionId('');
-      //setSupplierId('');
       setQuantity('1');
-      setDateReceived(new Date().toISOString().split('T')[0]);  // Reset to today's date on form submission
+      setDateReceived(new Date().toISOString().split('T')[0]);
+
+      // Refocus on the IMEI field
+      if (imeiInputRef.current) {
+        imeiInputRef.current.focus();
+      }
     } catch (error) {
       console.error('Error adding item detail:', error);
       alert('Failed to add item detail.');
     }
-  };
-
-  const getItemName = (id) => {
-    const item = items.find((i) => String(i.itemId) === String(id));
-    return item ? item.name : 'Unknown Item';
-  };
-
-  const getSupplierName = (id) => {
-    const supplier = suppliers.find((s) => String(s.supplierId) === String(id));
-    return supplier ? supplier.supplierName : 'Unknown Supplier';
-  };
-
-  const getDescriptionText = (id) => {
-    const description = descriptions.find((d) => String(d.descriptionId) === String(id));
-    return description ? description.descriptionText : 'Unknown Description';
   };
 
   return (
@@ -122,17 +152,18 @@ const AddItemDetails = () => {
             id="serialNumber"
             value={serialNumber}
             onChange={(e) => setSerialNumber(e.target.value)}
-           //required
           />
         </div>
 
         <div className="form-group">
-          <label htmlFor="imei1">IMEI 1:</label>
+          <label htmlFor="imei1">IMEI 1 (Scan to fill):</label>
           <input
             type="text"
             id="imei1"
             value={imei1}
             onChange={(e) => setImei1(e.target.value)}
+            placeholder="Scan barcode here"
+            ref={imeiInputRef} // Attach ref to the IMEI 1 input field
           />
         </div>
 
@@ -153,7 +184,6 @@ const AddItemDetails = () => {
             id="salePrice"
             value={salePrice}
             onChange={(e) => setSalePrice(e.target.value)}
-            //required
           />
         </div>
 
@@ -212,22 +242,7 @@ const AddItemDetails = () => {
           />
         </div>
 
-        <div className="form-group" style={{ display: 'none' }}>
-          <label htmlFor="quantity">Quantity:</label>
-          <input
-            type="number"
-            id="quantity"
-            value={quantity}
-            onChange={(e) => setQuantity(e.target.value)}
-            required
-          />
-        </div>
-
-        <div className="form-group full-width">
-          <button type="button" onClick={handleSubmit} className="btn btn-success">
-            Submit Item Detail
-          </button>
-        </div>
+        <p>Scan IMEI code with a barcode scanner to submit automatically.</p>
       </form>
     </div>
   );

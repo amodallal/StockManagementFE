@@ -51,12 +51,23 @@ const AddItemDetails = () => {
   }, []);
 
   useEffect(() => {
+    
     // Listen for barcode scanner input
     const handleBarcodeInput = (event) => {
       if (event.key === 'Enter') {
         // When 'Enter' key is pressed, assume the barcode is fully scanned
-        setImei1(barcodeData);
-        handleSubmit();
+        if (barcodeData.length !== 15) {
+          console.log('Invalid IMEI length:', barcodeData.length);
+          alert('IMEI must be exactly 15 digits');
+          setBarcodeData('');
+          setImei1('');
+
+          return; // Don't proceed with the request if the IMEI length is not 15
+        }
+  
+         setImei1(barcodeData);
+         
+        handleSubmit()
         setBarcodeData(''); // Reset barcode data after submission
       } else if (event.key !== 'Backspace') {  // Ignore backspace keys
         setBarcodeData((prev) => prev + event.key);
@@ -77,14 +88,15 @@ const AddItemDetails = () => {
       window.removeEventListener('keydown', handleBarcodeInput);
       clearTimeout(debounceTimerRef.current);  // Clear any existing timeouts
     };
-  }, [barcodeData]);
+  }, [imei1]);
 
   const handleSubmit = async () => {
-    if (!itemId || !imei1 || !salePrice || !quantity || !descriptionId || !supplierId || !dateReceived) {
+    if (!itemId || !imei1 || !salePrice ||  !cost || !quantity || !descriptionId || !supplierId || !dateReceived) {
+      
       alert('Please fill in all required fields.');
       return;
     }
-
+    
     const newItemDetail = {
       itemId,
       serialNumber,
@@ -99,6 +111,8 @@ const AddItemDetails = () => {
     };
 
     try {
+      console.log('Scanned Barcode:', barcodeData);
+      
       await axios.post('http://localhost:5257/api/ItemDetails', newItemDetail);
      // alert('Item detail added successfully!');
 
