@@ -91,27 +91,56 @@
 }
 
 /* Table styling */
-.table {
+/* General Table Styles */
+table {
   width: 100%;
-  border-collapse: collapse;
-  margin-top: 15px;
-}
-
-.table th,
-.table td {
-  border: 1px solid #ddd;
-  padding: 8px; /* Reduced padding for table cells */
+  border-collapse: collapse; /* Remove gaps between cells */
+  margin: 20px 0;
+  font-size: 16px;
+  font-family: Arial, sans-serif;
   text-align: left;
+  background-color: #f9f9f9; /* Light background color */
 }
 
-.table th {
-  background-color: #f4f4f4;
+/* Table Borders */
+table, th, td {
+  border: 1px solid #ddd;
+}
+
+/* Header Styles */
+thead th {
+  background-color: #4CAF50; /* Green background */
+  color: white; /* White text */
   font-weight: bold;
+  padding: 12px; /* Add padding */
+  text-align: center;
 }
 
-.table td {
-  background-color: #fff;
+/* Body Cell Styles */
+tbody td {
+  padding: 10px; /* Add padding for cells */
 }
+
+/* Zebra Striping for Rows */
+tbody tr:nth-child(even) {
+  background-color: #f2f2f2; /* Light gray for even rows */
+}
+
+/* Hover Effect for Rows */
+tbody tr:hover {
+  background-color: #ddd; /* Highlight on hover */
+}
+
+/* Responsive Tables */
+@media (max-width: 768px) {
+  table {
+    font-size: 14px; /* Smaller font size for smaller screens */
+  }
+  thead th, tbody td {
+    padding: 8px; /* Adjust padding for smaller screens */
+  }
+}
+
 
 /* Subtitle styling */
 .subtitle {
