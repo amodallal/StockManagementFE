@@ -92,19 +92,27 @@ const AddItemDetails = () => {
       setDateReceived(new Date().toISOString().split('T')[0]); // reset to today's date
       
     }
-
-    setIsFieldsLocked(!isFieldsLocked); // Toggle the state of field lock
-    if (imeiInputRef.current) {
-      imeiInputRef.current.focus();
-    }
+    setIsFieldsLocked((prev) => {
+      const nextState = !prev;
+  
+      // Defer focusing until the DOM has updated
+      if (!prev && imeiInputRef.current) {
+        setTimeout(() => {
+          imeiInputRef.current.focus();
+        }, 0);
+      }
+  
+      return nextState;
+    });
   };
 
   useEffect(() => {
     
     const handleBarcodeInput = (event) => {
       if (event.key === 'Enter') {
+
         if (!itemId || !imei1 || !salePrice || !cost || !quantity || !descriptionId || !supplierId || !dateReceived) {
-          alert('Please fill in all required fields.');
+          alert('Please fill in all required fields');
           setBarcodeData('');
           setImei1('');
           return;
@@ -169,7 +177,7 @@ const AddItemDetails = () => {
       // Wait for 1 second before showing the alert
       setTimeout(() => {
         alert('IMEI already exists in the database!');
-      }, 100);  // 1 second delay
+      }, 750);  // 1 second delay
       
       resetForm();
      return; // Stop the form submission if IMEI exists
@@ -265,7 +273,7 @@ const AddItemDetails = () => {
             onChange={(e) => setImei1(e.target.value)}
             placeholder="Scan barcode here"
             autoComplete="off"
-            //disabled={!isFieldsLocked}
+            disabled={!isFieldsLocked}
             ref={imeiInputRef}
           />
         </div>

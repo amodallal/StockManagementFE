@@ -17,12 +17,12 @@ const AddItemDetails = () => {
   const [descriptions, setDescriptions] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
   const [barcodeData, setBarcodeData] = useState('');
-  
-  const [isFieldsLocked, setIsFieldsLocked] = useState(false); // Add state to manage lock status
-  
+  const [addedItems, setAddedItems] = useState([]); // For displaying added items
+  const [isFieldsLocked, setIsFieldsLocked] = useState(false);
 
   const imeiInputRef = useRef(null);
   const debounceTimerRef = useRef(null);
+  
 
   useEffect(() => {
     const today = new Date().toISOString().split('T')[0];
@@ -34,53 +34,83 @@ const AddItemDetails = () => {
           axios.get('http://localhost:5257/api/items'),
           axios.get('http://localhost:5257/api/supplier'),
           axios.get('http://localhost:5257/api/description'),
+          
         ]);
-
         setItems(itemsRes.data);
         setSuppliers(suppliersRes.data);
         setDescriptions(descriptionsRes.data);
+        
       } catch (error) {
         console.error('Error fetching data:', error);
       }
     };
     fetchData();
   }, []);
+  const playBuzzer = () => {
+    const audio = new Audio('/buzzer.wav');  // Make sure the sound file is in the public folder
+    audio.play();  // Play the buzzer sound
+  };
+ // Function to check if IMEI exists in the database
+ const checkIMEIExists = async (imei1) => {
+  try {
+    console.log(imei1);
+    const response = await axios.get(`http://localhost:5257/api/Itemdetails/CheckIMEI/${imei1}`);
+    console.log(response.data);
+  
+    // Check the response for the 'exists' property
+    if (response.data.exists === true) {
+      return true; // IMEI exists
+    } else {
+      return false; // IMEI does not exist
+    }
+     // If response contains data, IMEI exists
+  } catch (error) {
+    console.error('Error checking IMEI:', error);
+    return false;
+  }
+};
 
   const toggleFields = () => {
+   
     if (!itemId || !salePrice || !cost || !quantity || !descriptionId || !supplierId || !dateReceived) {
       alert('Please fill in all required fields.');
       setBarcodeData('');
       setImei1('');
+      
       return;
     }
 
     // unLock fields and reset the form when stopping scan
     if (isFieldsLocked) {
       resetForm();
+      setItemId('');
+      setSerialNumber('');
+      setSalePrice('');
+      setCost('');
+      setDescriptionId('');
+      setSupplierId('');
+      setDateReceived(new Date().toISOString().split('T')[0]); // reset to today's date
+      
     }
-
-    setIsFieldsLocked(!isFieldsLocked); // Toggle the state of field lock
-    if (imeiInputRef.current) {
-      imeiInputRef.current.focus();
-    }
-  };
-
-  const resetForm = () => {
-    setItemId('');
-    setSerialNumber('');
-    setImei1('');
-    setImei2('');
-    setSalePrice('');
-    setCost('');
-    setDescriptionId('');
-    setSupplierId('');
-    setQuantity('1');
-    setDateReceived(new Date().toISOString().split('T')[0]); // reset to today's date
+    setIsFieldsLocked((prev) => {
+      const nextState = !prev;
+  
+      // Defer focusing until the DOM has updated
+      if (!prev && imeiInputRef.current) {
+        setTimeout(() => {
+          imeiInputRef.current.focus();
+        }, 0);
+      }
+  
+      return nextState;
+    });
   };
 
   useEffect(() => {
+    
     const handleBarcodeInput = (event) => {
       if (event.key === 'Enter') {
+        
         if (!itemId || !imei1 || !salePrice || !cost || !quantity || !descriptionId || !supplierId || !dateReceived) {
           alert('Please fill in all required fields.');
           setBarcodeData('');
@@ -88,15 +118,24 @@ const AddItemDetails = () => {
           return;
         }
 
+      
+
         if (barcodeData.length !== 15) {
-          console.log('Invalid IMEI length:', barcodeData.length);
-          alert('IMEI must be exactly 15 digits');
+          playBuzzer(); // Play buzzer sound
+          // Wait for 1 second before showing the alert
+          setTimeout(() => {
+            alert('IMEI must be exactly 15 digits');
+          }, 100);
+          
           setBarcodeData('');
           setImei1('');
           return;
+        
         }
+       
+         
 
-        setImei1(barcodeData);
+        //Submit
         handleSubmit();
         setBarcodeData('');
       } else if (event.key !== 'Backspace') {
@@ -119,32 +158,73 @@ const AddItemDetails = () => {
     };
   }, [imei1]);
 
+  const resetForm = () => {
+    // Reset only barcode data and IMEI fields, but keep the rest intact
+    setSerialNumber('');
+    setImei1('');
+    setImei2('');
+    setQuantity('1');
+    setDateReceived(new Date().toISOString().split('T')[0]);
+  };
+
   const handleSubmit = async () => {
-    const newItemDetail = {
-      itemId,
-      serialNumber,
+
+    // Check if IMEI exists in the database before submitting
+    const imeiExists = await checkIMEIExists(imei1);
+    console.log(imeiExists);
+    if (imeiExists) {
+      playBuzzer(); // Play buzzer sound
+      // Wait for 1 second before showing the alert
+      setTimeout(() => {
+        alert('IMEI already exists in the database!');
+      }, 150);  // 1 second delay
+      
+      resetForm();
+     return; // Stop the form submission if IMEI exists
+      
+    }
+
+    // Add to the grid view state with item name
+    const selectedItem = items.find((item) => item.itemId == itemId);
+    const itemData = {
+     itemName: selectedItem ? selectedItem.name : 'Unknown',
       imei1,
-      imei2,
       salePrice,
       cost,
-      descriptionId,
-      supplierId,
       quantity,
-      dateReceived,
+      
     };
 
     try {
-      console.log('Scanned Barcode:', barcodeData);
-      await axios.post('http://localhost:5257/api/ItemDetails', newItemDetail);
-      setSerialNumber('');
-      setImei1('');
-      setImei2('');
-      setQuantity('1');
-      setDateReceived(new Date().toISOString().split('T')[0]);
+        
+      const newItemDetail = {
+        itemId,
+        serialNumber,
+        imei1,
+        imei2,
+        salePrice,
+        cost,
+        descriptionId,
+        supplierId,
+        quantity,
+        dateReceived,
+      };
+      
 
+      // Make the API call to save the item
+      await axios.post('http://localhost:5257/api/ItemDetails', newItemDetail);
+
+      // Add the item to the grid (after the API call is successful)
+      setAddedItems((prevItems) => [...prevItems, itemData]);
+
+      // Reset the barcode-related fields after submitting the item
+      resetForm();
+
+      // Focus on the IMEI input field
       if (imeiInputRef.current) {
         imeiInputRef.current.focus();
       }
+
     } catch (error) {
       console.error('Error adding item detail:', error);
       alert('Failed to add item detail.');
@@ -161,7 +241,7 @@ const AddItemDetails = () => {
             id="itemId"
             value={itemId}
             onChange={(e) => setItemId(e.target.value)}
-            disabled={isFieldsLocked} // Disable based on toggle
+            disabled={isFieldsLocked}
             required
           >
             <option value="">Select Item</option>
@@ -180,11 +260,11 @@ const AddItemDetails = () => {
             id="serialNumber"
             value={serialNumber}
             onChange={(e) => setSerialNumber(e.target.value)}
-            disabled={isFieldsLocked} // Disable based on toggle
+            disabled={isFieldsLocked}
           />
         </div>
 
-        <div className="form-group">
+        <div className="form-group"  >
           <label htmlFor="imei1">IMEI 1 (Scan to fill):</label>
           <input
             type="text"
@@ -192,8 +272,9 @@ const AddItemDetails = () => {
             value={imei1}
             onChange={(e) => setImei1(e.target.value)}
             placeholder="Scan barcode here"
-            autoComplete='off'
-            ref={imeiInputRef} // Attach ref to the IMEI 1 input field
+            autoComplete="off"
+            disabled={!isFieldsLocked}
+            ref={imeiInputRef}
           />
         </div>
 
@@ -204,7 +285,7 @@ const AddItemDetails = () => {
             id="imei2"
             value={imei2}
             onChange={(e) => setImei2(e.target.value)}
-            disabled={isFieldsLocked} // Disable based on toggle
+            disabled={isFieldsLocked}
           />
         </div>
 
@@ -215,7 +296,7 @@ const AddItemDetails = () => {
             id="salePrice"
             value={salePrice}
             onChange={(e) => setSalePrice(e.target.value)}
-            disabled={isFieldsLocked} // Disable based on toggle
+            disabled={isFieldsLocked}
           />
         </div>
 
@@ -226,7 +307,7 @@ const AddItemDetails = () => {
             id="cost"
             value={cost}
             onChange={(e) => setCost(e.target.value)}
-            disabled={isFieldsLocked} // Disable based on toggle
+            disabled={isFieldsLocked}
           />
         </div>
 
@@ -237,7 +318,7 @@ const AddItemDetails = () => {
             value={descriptionId}
             onChange={(e) => setDescriptionId(e.target.value)}
             required
-            disabled={isFieldsLocked} // Disable based on toggle
+            disabled={isFieldsLocked}
           >
             <option value="">Select Description</option>
             {descriptions.map((desc) => (
@@ -255,7 +336,7 @@ const AddItemDetails = () => {
             value={supplierId}
             onChange={(e) => setSupplierId(e.target.value)}
             required
-            disabled={isFieldsLocked} // Disable based on toggle
+            disabled={isFieldsLocked}
           >
             <option value="">Select Supplier</option>
             {suppliers.map((supplier) => (
@@ -274,7 +355,7 @@ const AddItemDetails = () => {
             value={dateReceived}
             onChange={(e) => setDateReceived(e.target.value)}
             required
-            disabled={isFieldsLocked} // Disable based on toggle
+            disabled={isFieldsLocked}
           />
         </div>
 
@@ -282,10 +363,35 @@ const AddItemDetails = () => {
           {isFieldsLocked ? 'Stop Scan' : 'Start Scan'}
         </button>
       </form>
+
+      {/* Display Grid of Added Items */}
+      <div className="added-items">
+        <h3>Added Items</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Item Name</th>
+              <th>IMEI 1</th>
+              <th>Sale Price</th>
+              <th>Cost</th>
+              <th>Quantity</th>
+            </tr>
+          </thead>
+          <tbody>
+            {addedItems.map((item, index) => (
+              <tr key={index}>
+                <td>{item.itemName}</td>
+                <td>{item.imei1}</td>
+                <td>{item.salePrice}</td>
+                <td>{item.cost}</td>
+                <td>{item.quantity}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };
-
-
 
 export default AddItemDetails;
