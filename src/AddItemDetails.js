@@ -92,24 +92,56 @@ const AddItemDetails = () => {
       setDateReceived(new Date().toISOString().split('T')[0]); // reset to today's date
       
     }
+  
+    if(!isFieldsLocked)
+    {
+      
+      const selectedItem = items.find((item) => item.itemId == itemId);
+      const selectedsupplier = suppliers.find((supplier) => supplier.supplierId == supplierId);
+      const selectedescription = descriptions.find((description) => description.descriptionId == descriptionId);
+    // eslint-disable-next-line no-restricted-globals
+    const userConfirmed = confirm(
+      'Are you sure you want start scan ?\n'+
+      `Item: ${selectedItem.name}\n` +
+      `Supplier: ${selectedsupplier.supplierName}\n` +
+      `Description: ${selectedescription.descriptionText}\n` +
+      `Sale Price: ${salePrice}\n` +
+      `Cost: ${cost}`
+    );
+    if (!userConfirmed) {
+      return;
+      // Proceed with the action
+    }
+    }   
     setIsFieldsLocked((prev) => {
-      const nextState = !prev;
-  
-      // Defer focusing until the DOM has updated
-      if (!prev && imeiInputRef.current) {
-        setTimeout(() => {
-          imeiInputRef.current.focus();
-        }, 0);
-      }
-  
-      return nextState;
-    });
+    const nextState = !prev;
+
+    // Defer focusing until the DOM has updated
+    if (!prev && imeiInputRef.current) {
+      setTimeout(() => {
+        imeiInputRef.current.focus();
+      }, 0);
+    }
+
+    return nextState;
+  });
+
+
+    
   };
 
   useEffect(() => {
     
     const handleBarcodeInput = (event) => {
       if (event.key === 'Enter') {
+
+        if (!isFieldsLocked)
+        {
+          alert('Press start to scan');
+          setBarcodeData('');
+          setImei1('');
+          return;
+        }
 
         if (!itemId || !imei1 || !salePrice || !cost || !quantity || !descriptionId || !supplierId || !dateReceived) {
           alert('Please fill in all required fields');
@@ -295,7 +327,12 @@ const AddItemDetails = () => {
             type="number"
             id="salePrice"
             value={salePrice}
-            onChange={(e) => setSalePrice(e.target.value)}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value.length <= 5) { // Allow only up to 5 digits
+                setSalePrice(value);
+              }
+            }}
             disabled={isFieldsLocked}
           />
         </div>
@@ -306,7 +343,12 @@ const AddItemDetails = () => {
             type="number"
             id="cost"
             value={cost}
-            onChange={(e) => setCost(e.target.value)}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value.length <= 5) { // Allow only up to 5 digits
+                setCost(value);
+              }
+            }}
             disabled={isFieldsLocked}
           />
         </div>
