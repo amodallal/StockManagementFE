@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import './styles.css';
+import { fetch_itm_spr_des } from './Functions';
+import { playBuzzer} from './Functions';
+import {checkIMEIExists } from './Functions';
+
 
 const AddItemDetails = () => {
   const [itemId, setItemId] = useState('');
@@ -27,48 +31,23 @@ const AddItemDetails = () => {
   useEffect(() => {
     const today = new Date().toISOString().split('T')[0];
     setDateReceived(today);
-
+    
     const fetchData = async () => {
       try {
-        const [itemsRes, suppliersRes, descriptionsRes] = await Promise.all([
-          axios.get('http://localhost:5257/api/items'),
-          axios.get('http://localhost:5257/api/supplier'),
-          axios.get('http://localhost:5257/api/description'),
-          
-        ]);
-        setItems(itemsRes.data);
-        setSuppliers(suppliersRes.data);
-        setDescriptions(descriptionsRes.data);
-        
+        const { items, suppliers, descriptions } = await fetch_itm_spr_des();
+        setItems(items);
+        setSuppliers(suppliers);
+        setDescriptions(descriptions);
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error('Error fetching data in ExampleComponent:', error);
       }
     };
+
     fetchData();
+   
+
   }, []);
-  const playBuzzer = () => {
-    const audio = new Audio('/buzzer.wav');  // Make sure the sound file is in the public folder
-    audio.play();  // Play the buzzer sound
-  };
- // Function to check if IMEI exists in the database
- const checkIMEIExists = async (imei1) => {
-  try {
-    console.log(imei1);
-    const response = await axios.get(`http://localhost:5257/api/Itemdetails/CheckIMEI/${imei1}`);
-    console.log(response.data);
   
-    // Check the response for the 'exists' property
-    if (response.data.exists === true) {
-      return true; // IMEI exists
-    } else {
-      return false; // IMEI does not exist
-    }
-     // If response contains data, IMEI exists
-  } catch (error) {
-    console.error('Error checking IMEI:', error);
-    return false;
-  }
-};
 
   const toggleFields = () => {
    
@@ -136,12 +115,12 @@ const AddItemDetails = () => {
       if (event.key === 'Enter') {
 
         if (!isFieldsLocked)
-        {
-          alert('Press start to scan');
-          setBarcodeData('');
-          setImei1('');
-          return;
-        }
+          {
+            alert('Press start to scan');
+            setBarcodeData('');
+            setImei1('');
+            return;
+          }
 
         if (!itemId || !imei1 || !salePrice || !cost || !quantity || !descriptionId || !supplierId || !dateReceived) {
           alert('Please fill in all required fields');
@@ -149,7 +128,7 @@ const AddItemDetails = () => {
           setImei1('');
           return;
         }
-
+     
       
 
         if (barcodeData.length !== 15) {
