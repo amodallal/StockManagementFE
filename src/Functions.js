@@ -4,7 +4,7 @@ import axios from 'axios';
 
 
  // Get items , suppliers , and description data
-export const fetch_itm_spr_des = async () => {
+export const fetch_itm_sup_des = async () => {
     try {
       const [itemsRes, suppliersRes, descriptionsRes] = await Promise.all([
         axios.get('http://localhost:5257/api/items'),

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import './styles.css';
-import { fetch_itm_spr_des } from './Functions';
+import { fetch_itm_sup_des } from './Functions';
 import { playBuzzer} from './Functions';
 import {checkIMEIExists } from './Functions';
 
@@ -34,7 +34,7 @@ const AddItemDetails = () => {
     
     const fetchData = async () => {
       try {
-        const { items, suppliers, descriptions } = await fetch_itm_spr_des();
+        const { items, suppliers, descriptions } = await fetch_itm_sup_des();
         setItems(items);
         setSuppliers(suppliers);
         setDescriptions(descriptions);
