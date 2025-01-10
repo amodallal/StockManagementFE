@@ -6,6 +6,8 @@ import { playBuzzer} from './Functions';
 import {checkIMEIExists } from './Functions';
 
 
+
+
 const AddItemDetails = () => {
   const [itemId, setItemId] = useState('');
   const [serialNumber, setSerialNumber] = useState('');
@@ -23,7 +25,6 @@ const AddItemDetails = () => {
   const [barcodeData, setBarcodeData] = useState('');
   const [addedItems, setAddedItems] = useState([]); // For displaying added items
   const [isFieldsLocked, setIsFieldsLocked] = useState(false);
-
   const imeiInputRef = useRef(null);
   const debounceTimerRef = useRef(null);
   
@@ -31,7 +32,7 @@ const AddItemDetails = () => {
   useEffect(() => {
     const today = new Date().toISOString().split('T')[0];
     setDateReceived(today);
-    
+    //fetch Items , suppliers , description data
     const fetchData = async () => {
       try {
         const { items, suppliers, descriptions } = await fetch_itm_sup_des();
@@ -48,7 +49,7 @@ const AddItemDetails = () => {
 
   }, []);
   
-
+  //Toggle start/stop button
   const toggleFields = () => {
    
     if (!itemId || !salePrice || !cost || !quantity || !descriptionId || !supplierId || !dateReceived) {
@@ -71,15 +72,15 @@ const AddItemDetails = () => {
       setDateReceived(new Date().toISOString().split('T')[0]); // reset to today's date
       
     }
-  
+    //Send confirmation about item data before start scanning 
     if(!isFieldsLocked)
     {
       
       const selectedItem = items.find((item) => item.itemId == itemId);
       const selectedsupplier = suppliers.find((supplier) => supplier.supplierId == supplierId);
       const selectedescription = descriptions.find((description) => description.descriptionId == descriptionId);
-    // eslint-disable-next-line no-restricted-globals
-    const userConfirmed = confirm(
+      // eslint-disable-next-line no-restricted-globals
+      const userConfirmed = confirm(
       'Are you sure you want start scan ?\n'+
       `Item: ${selectedItem.name}\n` +
       `Supplier: ${selectedsupplier.supplierName}\n` +
@@ -95,7 +96,7 @@ const AddItemDetails = () => {
     setIsFieldsLocked((prev) => {
     const nextState = !prev;
 
-    // Defer focusing until the DOM has updated
+      // Defer focusing until the DOM has updated
     if (!prev && imeiInputRef.current) {
       setTimeout(() => {
         imeiInputRef.current.focus();
@@ -110,7 +111,7 @@ const AddItemDetails = () => {
   };
 
   useEffect(() => {
-    
+  //Handle bar code input 
     const handleBarcodeInput = (event) => {
       if (event.key === 'Enter') {
 
@@ -146,7 +147,7 @@ const AddItemDetails = () => {
        
          
 
-        //Submit
+  //Submit
         handleSubmit();
         setBarcodeData('');
       } else if (event.key !== 'Backspace') {
@@ -160,7 +161,7 @@ const AddItemDetails = () => {
         }, 300);
       }
     };
-
+    //listen to key press event 
     window.addEventListener('keydown', handleBarcodeInput);
 
     return () => {
