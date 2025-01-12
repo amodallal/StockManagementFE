@@ -2,6 +2,29 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import * as XLSX from 'xlsx';
 
+ //Get Employees
+
+ 
+ //Get Items
+
+
+ //Get Suppliers
+
+
+ //Get Descriptions
+
+ 
+ //Get Brands
+
+
+ //Get Categories
+
+
+ //Get Capacities
+
+
+ //Get Roles
+
 
  // Get items , suppliers , and description data
 export const fetch_itm_sup_des = async () => {
@@ -33,49 +56,18 @@ export const fetch_itm_sup_des = async () => {
   try {
     const response = await axios.get(`http://localhost:5257/api/Itemdetails/CheckIMEI/${imei1}`);
   
-  // Check the response for the 'exists' property
+      // Check the response for the 'exists' property
     if (response.data.exists === true) {
       return true; // IMEI exists
     } else {
       return false; // IMEI does not exist
     }
-     // If response contains data, IMEI exists
+      // If response contains data, IMEI exists
   } catch (error) {
     console.error('Error checking IMEI:', error);
     return false;
   }
 };
 
-  // Read Excel file 
-  /**
- * Function to read and parse an Excel file.
- * @param {File} file - The Excel file to process.
- * @returns {Promise<Array>} - A promise that resolves to an array of parsed data.
- */
-export const processExcelFile = (file) => {
-  return new Promise((resolve, reject) => {
-    if (!file) {
-      reject(new Error('No file provided'));
-      return;
-    }
 
-    const reader = new FileReader();
 
-    reader.onload = (e) => {
-      try {
-        const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const sheetName = workbook.SheetNames[0]; // Get the first sheet
-        const sheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(sheet);
-        resolve(jsonData); // Resolve the parsed data
-      } catch (error) {
-        reject(error);
-      }
-    };
-
-    reader.onerror = (error) => reject(error);
-
-    reader.readAsArrayBuffer(file);
-  });
-};

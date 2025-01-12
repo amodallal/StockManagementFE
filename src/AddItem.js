@@ -42,7 +42,7 @@ const AddItem = () => {
     try {
       // Check if the model number already exists in the current items state
       const existingItemInState = items.find((item) => item.modelNumber === modelNumber);
-      if (existingItemInState) {
+      if (existingItemInState && !isEditing) {
         alert('This model number already exists in the added items. Please use a different model number.');
         return;
       }

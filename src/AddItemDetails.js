@@ -7,7 +7,6 @@ import {checkIMEIExists } from './Functions';
 
 
 
-
 const AddItemDetails = () => {
   const [itemId, setItemId] = useState('');
   const [serialNumber, setSerialNumber] = useState('');
@@ -59,6 +58,8 @@ const AddItemDetails = () => {
       
       return;
     }
+
+    
 
     // unLock fields and reset the form when stopping scan
     if (isFieldsLocked) {
@@ -181,9 +182,11 @@ const AddItemDetails = () => {
 
   const handleSubmit = async () => {
 
+    // Validate IMEI against the Excel data
+     
+ 
     // Check if IMEI exists in the database before submitting
     const imeiExists = await checkIMEIExists(imei1);
-    console.log(imeiExists);
     if (imeiExists) {
       playBuzzer(); // Play buzzer sound
       // Wait for 1 second before showing the alert
