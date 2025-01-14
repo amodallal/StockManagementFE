@@ -39,10 +39,38 @@ export const PostItem = async (item) => {
 
  
  //Get Brands
+ 
+ export const fetch_brands = async () => {
+  try {
+    const [brandsRes] = await Promise.all([
+      axios.get('http://localhost:5257/api/brands'),
+    ]);
+    return {
+      brands: brandsRes.data,
+    };
+  } catch (error) {
+    console.error('Error fetching data:', error);
+    throw error;
+  }
+};
+
+  
 
 
  //Get Categories
-
+ export const fetch_categories = async () => {
+  try {
+    const [categoriesRes] = await Promise.all([
+      axios.get('http://localhost:5257/api/categories'),
+    ]);
+    return {
+      categories: categoriesRes.data,
+    };
+  } catch (error) {
+    console.error('Error fetching data:', error);
+    throw error;
+  }
+};
 
  //Get Capacities
 

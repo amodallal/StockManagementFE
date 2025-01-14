@@ -50,14 +50,15 @@ const handleAddCapacity = async () => {
   // Handle deleting a capacity
   const handleDeleteCapacity = async (capacityID) => {
   if (window.confirm('Are you sure you want to delete this capacity?')) {
-    try {
-      await DeleteCapacity(capacityID); // Call the delete API
+     const isDeleted = await DeleteCapacity(capacityID); // Call the delete API
       // Only update the state if deletion was successful
+      if (isDeleted){
         setCapacities(capacities.filter((capacity) => capacity.capacityID !== capacityID)); // Update the local state
-    } catch (err) {
-      console.error('Error deleting capacity:', err);
-      alert('Failed to delete capacity.');
-    }
+      }
+      else 
+      {
+        return;
+      }
   }
 };
 
