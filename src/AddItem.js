@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './styles.css';
+import { fetch_capacities } from './Functions';
 
 const AddItem = () => {
   const [name, setName] = useState('');
@@ -32,6 +33,9 @@ const AddItem = () => {
     };
     fetchData();
   }, []);
+
+ 
+
 
   const handleAddItem = async () => {
     if (!name || !modelNumber || !brandId || !categoryId) {

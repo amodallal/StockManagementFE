@@ -1,11 +1,35 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import * as XLSX from 'xlsx';
 
  //Get Employees
 
  
  //Get Items
+
+ export const fetch_items = async () => {
+  try {
+    const [itemsRes] = await Promise.all([
+      axios.get('http://localhost:5257/api/items'),
+    ]);
+    return {
+      items: itemsRes.data,
+    };
+  } catch (error) {
+    console.error('Error fetching data:', error);
+    throw error;
+  }
+};
+
+// Post Items
+export const PostItem = async (item) => {
+  try {
+    await axios.post('http://localhost:5257/api/items', item);
+    alert('Items submitted successfully!');
+  } catch (error) {
+    console.error('Error submitting items:', error);
+    alert('Failed to submit items.');
+  }
+};
 
 
  //Get Suppliers
@@ -21,6 +45,47 @@ import * as XLSX from 'xlsx';
 
 
  //Get Capacities
+
+ export const fetch_capacities = async () => {
+  try {
+    const [capacitiesRes] = await Promise.all([
+      axios.get('http://localhost:5257/api/capacities'),
+    ]);
+    return {
+      capacities: capacitiesRes.data,
+    };
+  } catch (error) {
+    console.error('Error fetching data:', error);
+    throw error;
+  }
+};
+
+// Post Capacity
+export const PostCapacity = async (Capacity) => {
+  try {
+    await axios.post('http://localhost:5257/api/Capacities', Capacity);
+    alert('Capacity submitted successfully!');
+  } catch (error) {
+    console.error('Error submitting Capacity:', error);
+    alert('Failed to submit Capacity.');
+  }
+};
+
+// Delete Capacity
+export const DeleteCapacity = async (capacityID) => {
+  try {
+    await axios.delete(`http://localhost:5257/api/capacities/${capacityID}`);
+    alert('Capacity deleted successfully!');
+    return true;
+    
+  } catch (error) {
+    alert('Failed to delete capacity.');
+    return false;
+   
+    
+  }
+};
+
 
 
  //Get Roles
