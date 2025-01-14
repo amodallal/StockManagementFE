@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import './styles.css'; // Import styles
 import { fetch_capacities, PostCapacity, DeleteCapacity } from './Functions';
 
@@ -50,15 +51,10 @@ const handleAddCapacity = async () => {
   // Handle deleting a capacity
   const handleDeleteCapacity = async (capacityID) => {
   if (window.confirm('Are you sure you want to delete this capacity?')) {
-     const isDeleted = await DeleteCapacity(capacityID); // Call the delete API
-      // Only update the state if deletion was successful
-      if (isDeleted){
-        setCapacities(capacities.filter((capacity) => capacity.capacityID !== capacityID)); // Update the local state
-      }
-      else 
-      {
-        return;
-      }
+     await DeleteCapacity(capacityID); // Remove from the database
+
+     const response = await axios.get('http://localhost:5257/api/capacities');
+        setCapacities(response.data);
   }
 };
 

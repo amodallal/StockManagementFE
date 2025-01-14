@@ -31,6 +31,17 @@ export const PostItem = async (item) => {
   }
 };
 
+//Delete Item
+
+export const DeleteItem = async (itemId) => {
+  try
+  {
+    await axios.delete(`http://localhost:5257/api/items/${itemId}`);
+    alert('Item deleted successfully!');
+  } catch (error) {
+    alert('Failed to delete item.');
+  }
+};
 
  //Get Suppliers
 
