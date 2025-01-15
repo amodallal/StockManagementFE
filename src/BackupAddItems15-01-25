@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './styles.css';
-import { fetch_brands, fetch_categories, fetch_items, PostItem, DeleteItem, fetch_capacities, fetch_itemscapacities } from './Functions';
+import { fetch_brands, fetch_categories, fetch_items, PostItem, DeleteItem } from './Functions';
 
 const AddItem = () => {
   const [name, setName] = useState('');
@@ -11,10 +11,7 @@ const AddItem = () => {
   const [categoryId, setCategoryId] = useState('');
   const [brands, setBrands] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [capacities, setCapacities] = useState([]);
   const [items, setItems] = useState([]);
-  const [capacityId, setCapacityId] = useState([]); 
-  const [itemscapacities, setitemCapacities] = useState([]); 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -23,19 +20,15 @@ const AddItem = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [brandsData, categoriesData, itemsData, capacitiesData , itemscapacitiesData] = await Promise.all([
+        const [brandsData, categoriesData, itemsData] = await Promise.all([
           fetch_brands(),
           fetch_categories(),
           fetch_items(),
-          fetch_capacities(), // Assuming this function is defined in Functions.js
-         // fetch_itemscapacities(),
         ]);
 
         setBrands(brandsData.brands);
         setCategories(categoriesData.categories);
         setItems(itemsData.items);
-        setCapacities(capacitiesData.capacities);  // Set fetched capacities
-        //setitemCapacities(itemscapacitiesData.itemscapacities)
         setLoading(false);
       } catch (err) {
         console.error('Error fetching data:', err);
@@ -47,9 +40,8 @@ const AddItem = () => {
     fetchData();
   }, []);
 
-  // Handle adding an item
   const handleAddItem = async () => {
-    if (!name || !modelNumber || !brandId || !categoryId || capacityId.length === 0) {
+    if (!name || !modelNumber || !brandId || !categoryId) {
       alert('Please fill in all required fields before adding.');
       return;
     }
@@ -62,30 +54,15 @@ const AddItem = () => {
       alert('This model number already exists in the database. Please use a different model number.');
       return;
     }
+    
 
     try {
       const newItem = { name, modelNumber, barcode, brandId, categoryId };
-      
-      // Insert the item into the database
-      await PostItem(newItem); // PostItem should handle adding the item to the `items` table
-
-      // Fetch the newly created item to get its `itemId`
-      const itemsResponse = await axios.get('http://localhost:5257/api/items');
-      const createdItem = itemsResponse.data.find(item => item.modelNumber === modelNumber);
-      
-      if (createdItem) {
-        // Send the selected capacity IDs (without any splitting or concatenating)
-          //await Promise.all(capacityId.map(async (capacityId) => {
-            console.log(capacities);
-          await axios.post('http://localhost:5257/api/items/item-capacities', {
-            ItemId: createdItem.itemId, 
-            CapacityIds: capacityId  // Send the individual capacity ID as an array
-          });
-       // }));
-      }
+      await PostItem(newItem); // Insert into the database
 
       // Fetch updated items after adding
-      setItems(itemsResponse.data);
+      const response = await axios.get('http://localhost:5257/api/items');
+      setItems(response.data);
 
       // Clear input fields
       setName('');
@@ -93,21 +70,20 @@ const AddItem = () => {
       setBarcode('');
       setBrandId('');
       setCategoryId('');
-      setCapacityId([]);  // Clear the selected capacities
     } catch (err) {
       console.error('Error adding item:', err);
       alert('Failed to add item.');
     }
   };
 
-  // Handle deleting an item
   const handleDeleteItem = async (itemId) => {
     if (window.confirm('Are you sure you want to delete this item?')) {
-      await DeleteItem(itemId); // Remove from the database
+        await DeleteItem(itemId); // Remove from the database
+        
+        // Fetch updated items after deletion
+        const response = await axios.get('http://localhost:5257/api/items');
+        setItems(response.data);
 
-      // Fetch updated items after deletion
-      const response = await axios.get('http://localhost:5257/api/items');
-      setItems(response.data);
     }
   };
 
@@ -177,24 +153,6 @@ const AddItem = () => {
           </select>
         </div>
 
-        {/* Multi-Select for Capacities */}
-        <div className="form-group">
-          <label htmlFor="capacities">Select Capacities:</label>
-          <select
-            id="capacityId"
-            value={capacityId}
-            onChange={(e) => setCapacityId(Array.from(e.target.selectedOptions, option => option.value))}
-            multiple
-          >
-            <option value="">Select capacities</option>
-            {capacities.map((capacity) => (
-              <option key={capacity.capacityID} value={capacity.capacityID}>
-                {capacity.capacityName}  {/* You can still display the name */}
-              </option>
-            ))}
-          </select>
-        </div>
-
         <button className="btn btn-success" onClick={handleAddItem}>
           Add Item
         </button>
@@ -210,7 +168,6 @@ const AddItem = () => {
               <th>Model Number</th>
               <th>Brand</th>
               <th>Category</th>
-              <th>Capacities</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -221,7 +178,6 @@ const AddItem = () => {
                 <td>{item.modelNumber}</td>
                 <td>{brands.find((b) => b.brandId === item.brandId)?.brandName || 'Unknown'}</td>
                 <td>{categories.find((c) => c.categoryId === item.categoryId)?.categoryName || 'Unknown'}</td>
-                <td>{itemscapacities.find((itmcap) => itmcap.capacityID === capacities.ItemID)?.capacityName || 'Unknown'}</td>
                 <td>
                   <button
                     className="btn btn-danger"

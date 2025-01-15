@@ -24,7 +24,7 @@ import axios from 'axios';
 export const PostItem = async (item) => {
   try {
     await axios.post('http://localhost:5257/api/items', item);
-    alert('Items submitted successfully!');
+    //alert('Items submitted successfully!');
   } catch (error) {
     console.error('Error submitting items:', error);
     alert('Failed to submit items.');
@@ -125,6 +125,19 @@ export const DeleteCapacity = async (capacityID) => {
   }
 };
 
+//Get ItemsCpacites
+
+export const fetch_itemscapacities = async () => {
+  try {
+    const [itemscapacitiesRes]  = await axios.get(`http://localhost:5257/api/items/item-capacities`);
+    return {
+      itemscapacities: itemscapacitiesRes.data,
+    };
+  } catch (error) {
+    console.error('Error fetching data:', error);
+    throw error;
+  }
+};
 
 
  //Get Roles
