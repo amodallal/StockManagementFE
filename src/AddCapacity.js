@@ -71,6 +71,7 @@ const handleAddCapacity = async () => {
       <h2 className="title">Capacities List</h2>
 
       {/* Add Capacity Form */}
+      
       <div className="form-group full-width">
         <label htmlFor="newCapacityName">Add New Capacity:</label>
         <input
@@ -84,7 +85,7 @@ const handleAddCapacity = async () => {
           Add Capacity
         </button>
       </div>
-
+      <h3 className="subtitle">Available Capacities</h3>
       {/* Capacities Grid */}
       {capacities.length > 0 ? (
         <table>
