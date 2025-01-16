@@ -93,7 +93,7 @@ const AddItemDetails = () => {
       return;
       // Proceed with the action
     }
-    }   
+    }
     setIsFieldsLocked((prev) => {
     const nextState = !prev;
 
@@ -275,7 +275,7 @@ const AddItemDetails = () => {
             id="serialNumber"
             value={serialNumber}
             onChange={(e) => setSerialNumber(e.target.value)}
-            disabled={isFieldsLocked}
+            disabled={!isFieldsLocked}
           />
         </div>
 
