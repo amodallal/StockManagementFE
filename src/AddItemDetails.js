@@ -248,7 +248,7 @@ const AddItemDetails = () => {
 
   return (
     <div className="container">
-      <h2 className="title">Add Item Details</h2>
+      <h2 className="title">Add Items</h2>
       <form onSubmit={(e) => e.preventDefault()} className="form">
         <div className="form-group">
           <label htmlFor="itemId">Item:</label>

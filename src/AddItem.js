@@ -124,7 +124,7 @@ const AddItem = () => {
 
   return (
     <div className="container">
-      <h2 className="title">Add Item</h2>
+      <h2 className="title">Add Product</h2>
 
       {/* Add Item Form */}
       <div className="form">
@@ -211,7 +211,7 @@ const AddItem = () => {
         </div>
 
         <button className="btn btn-success" onClick={handleAddItem}>
-          Add Item
+          Add
         </button>
       </div>
 
