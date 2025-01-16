@@ -95,7 +95,7 @@ const AddItem = () => {
       setBrandId('');
       setCategoryId('');
       setCapacityId([]);  // Clear the selected capacities
-      setIsIemiId(false); // Reset checkbox
+      setIsIemiId(true); // Reset checkbox
     } catch (err) {
       console.error('Error adding item:', err);
       alert('Failed to add item.');
