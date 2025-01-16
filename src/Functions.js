@@ -24,8 +24,9 @@ import axios from 'axios';
 export const PostItem = async (item) => {
   try {
     await axios.post('http://localhost:5257/api/items', item);
+    alert('Items submitted successfully!');
     return true;
-    //alert('Items submitted successfully!');
+    
   } catch (error) {
     console.error('Error submitting items:', error);
     alert('Failed to submit items.');

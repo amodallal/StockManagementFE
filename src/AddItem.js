@@ -181,7 +181,7 @@ const AddItem = () => {
             ))}
           </select>
        
-       /</div>
+       </div>
           {/* Checkbox for IsIemiId */}
           <div className="form-group">
           <label htmlFor="IEMIE">IEMIE:</label>
