@@ -24,6 +24,7 @@ import axios from 'axios';
 export const PostItem = async (item) => {
   try {
     await axios.post('http://localhost:5257/api/items', item);
+    return true;
     //alert('Items submitted successfully!');
   } catch (error) {
     console.error('Error submitting items:', error);
@@ -127,17 +128,34 @@ export const DeleteCapacity = async (capacityID) => {
 
 //Get ItemsCpacites
 
-export const fetch_itemscapacities = async () => {
+export const fetch_itemscapacities = async  (itemscapacities) => {
   try {
-    const [itemscapacitiesRes]  = await axios.get(`http://localhost:5257/api/items/item-capacities`);
-    return {
-      itemscapacities: itemscapacitiesRes.data,
-    };
+      const response = await fetch('http://localhost:5257/api/items/item-capacities');
+      if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+
+      if (!Array.isArray(data)) {
+          throw new TypeError("API did not return an array");
+      }
+
+      // Extract all capacities into a flat array
+      const itemcapacities = data.flatMap(item =>
+          item.capacities.map(capacity => ({
+              itemId: item.itemId,
+              capacityId: capacity.capacityID,
+              capacityName: capacity.capacityName
+          }))
+      );
+
+      return itemcapacities;
   } catch (error) {
-    console.error('Error fetching data:', error);
-    throw error;
+      console.error("Error fetching data:", error);
+      return []; // Return an empty array to avoid further errors
   }
-};
+}
+
 
 
  //Get Roles

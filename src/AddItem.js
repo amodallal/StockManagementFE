@@ -14,9 +14,10 @@ const AddItem = () => {
   const [capacities, setCapacities] = useState([]);
   const [items, setItems] = useState([]);
   const [capacityId, setCapacityId] = useState([]); 
-  const [itemscapacities, setitemCapacities] = useState([]); 
+  const [itemscapacities, setItemCapacities] = useState([]); 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isIemiId, setIsIemiId] = useState(true); // State for the checkbox
 
   // Fetch initial data
   useEffect(() => {
@@ -27,15 +28,15 @@ const AddItem = () => {
           fetch_brands(),
           fetch_categories(),
           fetch_items(),
-          fetch_capacities(), // Assuming this function is defined in Functions.js
-         // fetch_itemscapacities(),
+          fetch_capacities(),
+          fetch_itemscapacities()
         ]);
-
+  
         setBrands(brandsData.brands);
         setCategories(categoriesData.categories);
         setItems(itemsData.items);
-        setCapacities(capacitiesData.capacities);  // Set fetched capacities
-        //setitemCapacities(itemscapacitiesData.itemscapacities)
+        setCapacities(capacitiesData.capacities);
+        setItemCapacities(itemscapacitiesData); // Update item capacities state
         setLoading(false);
       } catch (err) {
         console.error('Error fetching data:', err);
@@ -43,9 +44,9 @@ const AddItem = () => {
         setLoading(false);
       }
     };
-
+  
     fetchData();
-  }, []);
+  }, []); // Empty dependency array ensures this only runs once on initial mount
 
   // Handle adding an item
   const handleAddItem = async () => {
@@ -64,24 +65,24 @@ const AddItem = () => {
     }
 
     try {
-      const newItem = { name, modelNumber, barcode, brandId, categoryId };
+      const newItem = { name, modelNumber, barcode, brandId, categoryId, isIemiId }; // Include isIemiId
       
       // Insert the item into the database
-      await PostItem(newItem); // PostItem should handle adding the item to the `items` table
+      await PostItem(newItem);
 
       // Fetch the newly created item to get its `itemId`
       const itemsResponse = await axios.get('http://localhost:5257/api/items');
       const createdItem = itemsResponse.data.find(item => item.modelNumber === modelNumber);
-      
+
       if (createdItem) {
         // Send the selected capacity IDs (without any splitting or concatenating)
-          //await Promise.all(capacityId.map(async (capacityId) => {
-            console.log(capacities);
-          await axios.post('http://localhost:5257/api/items/item-capacities', {
-            ItemId: createdItem.itemId, 
-            CapacityIds: capacityId  // Send the individual capacity ID as an array
-          });
-       // }));
+        await axios.post('http://localhost:5257/api/items/item-capacities', {
+          ItemId: createdItem.itemId, 
+          CapacityIds: capacityId  // Send the individual capacity ID as an array
+        });
+         // Fetch updated capacities after adding
+         const updatedItemscapacities = await fetch_itemscapacities();
+         setItemCapacities(updatedItemscapacities);
       }
 
       // Fetch updated items after adding
@@ -94,9 +95,11 @@ const AddItem = () => {
       setBrandId('');
       setCategoryId('');
       setCapacityId([]);  // Clear the selected capacities
+      setIsIemiId(false); // Reset checkbox
     } catch (err) {
       console.error('Error adding item:', err);
       alert('Failed to add item.');
+      
     }
   };
 
@@ -161,6 +164,8 @@ const AddItem = () => {
           </select>
         </div>
 
+
+
         <div className="form-group">
           <label htmlFor="categoryId">Category:</label>
           <select
@@ -175,6 +180,17 @@ const AddItem = () => {
               </option>
             ))}
           </select>
+       
+       /</div>
+          {/* Checkbox for IsIemiId */}
+          <div className="form-group">
+          <label htmlFor="IEMIE">IEMIE:</label>
+          <input
+            type="checkbox"
+            id="IEMIE"
+            checked={isIemiId}
+            onChange={(e) => setIsIemiId(e.target.checked)}
+          />
         </div>
 
         {/* Multi-Select for Capacities */}
@@ -186,10 +202,9 @@ const AddItem = () => {
             onChange={(e) => setCapacityId(Array.from(e.target.selectedOptions, option => option.value))}
             multiple
           >
-            <option value="">Select capacities</option>
             {capacities.map((capacity) => (
               <option key={capacity.capacityID} value={capacity.capacityID}>
-                {capacity.capacityName}  {/* You can still display the name */}
+                {capacity.capacityName}
               </option>
             ))}
           </select>
@@ -221,7 +236,15 @@ const AddItem = () => {
                 <td>{item.modelNumber}</td>
                 <td>{brands.find((b) => b.brandId === item.brandId)?.brandName || 'Unknown'}</td>
                 <td>{categories.find((c) => c.categoryId === item.categoryId)?.categoryName || 'Unknown'}</td>
-                <td>{itemscapacities.find((itmcap) => itmcap.capacityID === capacities.ItemID)?.capacityName || 'Unknown'}</td>
+                <td>
+                  {itemscapacities
+                    .filter((itemCapacity) => itemCapacity.itemId === item.itemId)
+                    .map((itemCapacity) => (
+                      <div key={`${itemCapacity.itemId}-${itemCapacity.capacityId}`}>
+                        {itemCapacity.capacityName || 'Unknown'}
+                      </div>
+                    ))}
+                </td>
                 <td>
                   <button
                     className="btn btn-danger"
