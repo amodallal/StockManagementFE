@@ -17,7 +17,7 @@ const AddItem = () => {
   const [itemscapacities, setItemCapacities] = useState([]); 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isIemiId, setIsIemiId] = useState(true); // State for the checkbox
+  const [isImeiId, setIsIemiId] = useState(true); // State for the checkbox
 
   // Fetch initial data
   useEffect(() => {
@@ -65,7 +65,7 @@ const AddItem = () => {
     }
 
     try {
-      const newItem = { name, modelNumber, barcode, brandId, categoryId, isIemiId }; // Include isIemiId
+      const newItem = { name, modelNumber, barcode, brandId, categoryId, isImeiId }; // Include isIemiId
       
       // Insert the item into the database
       await PostItem(newItem);
@@ -188,7 +188,7 @@ const AddItem = () => {
           <input
             type="checkbox"
             id="IEMIE"
-            checked={isIemiId}
+            checked={isImeiId}
             onChange={(e) => setIsIemiId(e.target.checked)}
           />
         </div>

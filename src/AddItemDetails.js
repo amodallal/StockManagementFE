@@ -26,6 +26,7 @@ const AddItemDetails = () => {
   const [isFieldsLocked, setIsFieldsLocked] = useState(false);
   const imeiInputRef = useRef(null);
   const debounceTimerRef = useRef(null);
+  const [isImeiId, setIsemiId] = useState(true);
   
 
   useEffect(() => {
@@ -211,7 +212,7 @@ const AddItemDetails = () => {
     };
 
     try {
-        
+    
       const newItemDetail = {
         itemId,
         serialNumber,
@@ -253,19 +254,29 @@ const AddItemDetails = () => {
         <div className="form-group">
           <label htmlFor="itemId">Item:</label>
           <select
-            id="itemId"
-            value={itemId}
-            onChange={(e) => setItemId(e.target.value)}
-            disabled={isFieldsLocked}
-            required
-          >
-            <option value="">Select Item</option>
-            {items.map((item) => (
-              <option key={item.itemId} value={item.itemId}>
-                {item.name}
-              </option>
-            ))}
-          </select>
+  id="itemId"
+  value={itemId}
+  onChange={(e) => {
+    const selectedItem = items.find((item) => item.itemId == e.target.value); // Find the selected item by itemId
+    if (selectedItem) {
+      setItemId(selectedItem.itemId); // Update itemId state
+      setIsemiId(selectedItem.isImeiId); // Update isImeiId state
+      console.log(selectedItem.isImeiId); // Log the value
+    } else {
+      console.error('Item not found!');
+      // Optionally handle the case where the item is not found
+    }
+  }}
+  disabled={isFieldsLocked}
+  required
+>
+  <option value="">Select Item</option>
+  {items.map((item) => (
+    <option key={item.itemId} value={item.itemId}>
+      {item.name}
+    </option>
+  ))}
+</select>
         </div>
 
         <div className="form-group">
