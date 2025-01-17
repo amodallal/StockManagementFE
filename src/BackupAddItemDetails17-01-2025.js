@@ -1,6 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import './styles.css';
+import { fetch_itm_sup_des } from './Functions';
+import { playBuzzer} from './Functions';
+import {checkIMEIExists } from './Functions';
+
+
 
 const AddItemDetails = () => {
   const [itemId, setItemId] = useState('');
@@ -19,59 +24,34 @@ const AddItemDetails = () => {
   const [barcodeData, setBarcodeData] = useState('');
   const [addedItems, setAddedItems] = useState([]); // For displaying added items
   const [isFieldsLocked, setIsFieldsLocked] = useState(false);
-
   const imeiInputRef = useRef(null);
   const debounceTimerRef = useRef(null);
+  const [isImeiId, setIsemiId] = useState(true);
   
 
   useEffect(() => {
     const today = new Date().toISOString().split('T')[0];
     setDateReceived(today);
-
+    //fetch Items , suppliers , description data
     const fetchData = async () => {
       try {
-        const [itemsRes, suppliersRes, descriptionsRes] = await Promise.all([
-          axios.get('http://localhost:5257/api/items'),
-          axios.get('http://localhost:5257/api/supplier'),
-          axios.get('http://localhost:5257/api/description'),
-          
-        ]);
-        setItems(itemsRes.data);
-        setSuppliers(suppliersRes.data);
-        setDescriptions(descriptionsRes.data);
-        
+        const { items, suppliers, descriptions } = await fetch_itm_sup_des();
+        setItems(items);
+        setSuppliers(suppliers);
+        setDescriptions(descriptions);
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error('Error fetching data', error);
       }
     };
-    fetchData();
-  }, []);
-  const playBuzzer = () => {
-    const audio = new Audio('/buzzer.wav');  // Make sure the sound file is in the public folder
-    audio.play();  // Play the buzzer sound
-  };
- // Function to check if IMEI exists in the database
- const checkIMEIExists = async (imei1) => {
-  try {
-    console.log(imei1);
-    const response = await axios.get(`http://localhost:5257/api/Itemdetails/CheckIMEI/${imei1}`);
-    console.log(response.data);
-  
-    // Check the response for the 'exists' property
-    if (response.data.exists === true) {
-      return true; // IMEI exists
-    } else {
-      return false; // IMEI does not exist
-    }
-     // If response contains data, IMEI exists
-  } catch (error) {
-    console.error('Error checking IMEI:', error);
-    return false;
-  }
-};
 
-  const toggleFields = () => {
+    fetchData();
    
+
+  }, []);
+  
+  //Toggle start/stop button
+  const toggleFields = () => {
+    
     if (!itemId || !salePrice || !cost || !quantity || !descriptionId || !supplierId || !dateReceived) {
       alert('Please fill in all required fields.');
       setBarcodeData('');
@@ -79,6 +59,8 @@ const AddItemDetails = () => {
       
       return;
     }
+
+    
 
     // unLock fields and reset the form when stopping scan
     if (isFieldsLocked) {
@@ -92,24 +74,58 @@ const AddItemDetails = () => {
       setDateReceived(new Date().toISOString().split('T')[0]); // reset to today's date
       
     }
+    //Send confirmation about item data before start scanning 
+    if(!isFieldsLocked)
+    {
+      
+      const selectedItem = items.find((item) => item.itemId == itemId);
+      const selectedsupplier = suppliers.find((supplier) => supplier.supplierId == supplierId);
+      const selectedescription = descriptions.find((description) => description.descriptionId == descriptionId);
+      // eslint-disable-next-line no-restricted-globals
+      const userConfirmed = confirm(
+      'Are you sure you want start scan ?\n'+
+      `Item: ${selectedItem.name}\n` +
+      `Supplier: ${selectedsupplier.supplierName}\n` +
+      `Description: ${selectedescription.descriptionText}\n` +
+      `Sale Price: ${salePrice}\n` +
+      `Cost: ${cost}`
+    );
+    if (!userConfirmed) {
+      return;
+      // Proceed with the action
+    }
+
+    }
     setIsFieldsLocked((prev) => {
-      const nextState = !prev;
-  
+    const nextState = !prev;
+
       // Defer focusing until the DOM has updated
-      if (!prev && imeiInputRef.current) {
-        setTimeout(() => {
-          imeiInputRef.current.focus();
-        }, 0);
-      }
-  
-      return nextState;
-    });
+    if (!prev && imeiInputRef.current) {
+      setTimeout(() => {
+        imeiInputRef.current.focus();
+      }, 0);
+    }
+
+    return nextState;
+  });
+
+
+    
   };
 
   useEffect(() => {
-    
+  //Handle bar code input 
     const handleBarcodeInput = (event) => {
+      
       if (event.key === 'Enter') {
+
+        if (!isFieldsLocked)
+          {
+            alert('Press start to scan');
+            setBarcodeData('');
+            setImei1('');
+            return;
+          }
 
         if (!itemId || !imei1 || !salePrice || !cost || !quantity || !descriptionId || !supplierId || !dateReceived) {
           alert('Please fill in all required fields');
@@ -117,7 +133,7 @@ const AddItemDetails = () => {
           setImei1('');
           return;
         }
-
+     
       
 
         if (barcodeData.length !== 15) {
@@ -135,7 +151,8 @@ const AddItemDetails = () => {
        
          
 
-        //Submit
+  //Submit
+ 
         handleSubmit();
         setBarcodeData('');
       } else if (event.key !== 'Backspace') {
@@ -149,7 +166,7 @@ const AddItemDetails = () => {
         }, 300);
       }
     };
-
+    //listen to key press event 
     window.addEventListener('keydown', handleBarcodeInput);
 
     return () => {
@@ -168,10 +185,10 @@ const AddItemDetails = () => {
   };
 
   const handleSubmit = async () => {
-
+     
+    console.log(serialNumber);
     // Check if IMEI exists in the database before submitting
     const imeiExists = await checkIMEIExists(imei1);
-    console.log(imeiExists);
     if (imeiExists) {
       playBuzzer(); // Play buzzer sound
       // Wait for 1 second before showing the alert
@@ -196,7 +213,7 @@ const AddItemDetails = () => {
     };
 
     try {
-        
+    
       const newItemDetail = {
         itemId,
         serialNumber,
@@ -233,24 +250,34 @@ const AddItemDetails = () => {
 
   return (
     <div className="container">
-      <h2 className="title">Add Item Details</h2>
+      <h2 className="title">Add Items</h2>
       <form onSubmit={(e) => e.preventDefault()} className="form">
         <div className="form-group">
           <label htmlFor="itemId">Item:</label>
           <select
-            id="itemId"
-            value={itemId}
-            onChange={(e) => setItemId(e.target.value)}
-            disabled={isFieldsLocked}
-            required
-          >
-            <option value="">Select Item</option>
-            {items.map((item) => (
-              <option key={item.itemId} value={item.itemId}>
-                {item.name}
-              </option>
-            ))}
-          </select>
+  id="itemId"
+  value={itemId}
+  onChange={(e) => {
+    const selectedItem = items.find((item) => item.itemId == e.target.value); // Find the selected item by itemId
+    if (selectedItem) {
+      setItemId(selectedItem.itemId); // Update itemId state
+      setIsemiId(selectedItem.isImeiId); // Update isImeiId state
+      console.log(selectedItem.isImeiId); // Log the value
+    } else {
+      console.error('Item not found!');
+      // Optionally handle the case where the item is not found
+    }
+  }}
+  disabled={isFieldsLocked}
+  required
+>
+  <option value="">Select Item</option>
+  {items.map((item) => (
+    <option key={item.itemId} value={item.itemId}>
+      {item.name}
+    </option>
+  ))}
+</select>
         </div>
 
         <div className="form-group">
@@ -260,7 +287,7 @@ const AddItemDetails = () => {
             id="serialNumber"
             value={serialNumber}
             onChange={(e) => setSerialNumber(e.target.value)}
-            disabled={isFieldsLocked}
+            disabled={!isFieldsLocked}
           />
         </div>
 
@@ -295,7 +322,12 @@ const AddItemDetails = () => {
             type="number"
             id="salePrice"
             value={salePrice}
-            onChange={(e) => setSalePrice(e.target.value)}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value.length <= 5) { // Allow only up to 5 digits
+                setSalePrice(value);
+              }
+            }}
             disabled={isFieldsLocked}
           />
         </div>
@@ -306,7 +338,12 @@ const AddItemDetails = () => {
             type="number"
             id="cost"
             value={cost}
-            onChange={(e) => setCost(e.target.value)}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value.length <= 5) { // Allow only up to 5 digits
+                setCost(value);
+              }
+            }}
             disabled={isFieldsLocked}
           />
         </div>

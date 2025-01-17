@@ -51,7 +51,7 @@ const AddItemDetails = () => {
   
   //Toggle start/stop button
   const toggleFields = () => {
-   
+    
     if (!itemId || !salePrice || !cost || !quantity || !descriptionId || !supplierId || !dateReceived) {
       alert('Please fill in all required fields.');
       setBarcodeData('');
@@ -94,6 +94,7 @@ const AddItemDetails = () => {
       return;
       // Proceed with the action
     }
+
     }
     setIsFieldsLocked((prev) => {
     const nextState = !prev;
@@ -115,6 +116,7 @@ const AddItemDetails = () => {
   useEffect(() => {
   //Handle bar code input 
     const handleBarcodeInput = (event) => {
+      
       if (event.key === 'Enter') {
 
         if (!isFieldsLocked)
@@ -150,6 +152,7 @@ const AddItemDetails = () => {
          
 
   //Submit
+ 
         handleSubmit();
         setBarcodeData('');
       } else if (event.key !== 'Backspace') {
@@ -182,10 +185,8 @@ const AddItemDetails = () => {
   };
 
   const handleSubmit = async () => {
-
-    // Validate IMEI against the Excel data
      
- 
+    console.log(serialNumber);
     // Check if IMEI exists in the database before submitting
     const imeiExists = await checkIMEIExists(imei1);
     if (imeiExists) {
