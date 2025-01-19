@@ -17,8 +17,8 @@ const AddItem = () => {
   const [itemscapacities, setItemCapacities] = useState([]); 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isImeiId, setIsIemiId] = useState(true); // State for the checkbox
-
+  //const [isImeiId, setIsIemiId] = useState(true); // State for the checkbox
+  let isImeiId= true;
   // Fetch initial data
   useEffect(() => {
     const fetchData = async () => {
@@ -65,6 +65,12 @@ const AddItem = () => {
     }
 
     try {
+      
+      if (categoryId === '4')
+        
+      {
+        isImeiId = false;
+      }
       const newItem = { name, modelNumber, barcode, brandId, categoryId, isImeiId }; // Include isIemiId
       
       // Insert the item into the database
@@ -95,7 +101,8 @@ const AddItem = () => {
       setBrandId('');
       setCategoryId('');
       setCapacityId([]);  // Clear the selected capacities
-      setIsIemiId(true); // Reset checkbox
+      isImeiId = true;
+      //setIsIemiId(true); // Reset checkbox
     } catch (err) {
       console.error('Error adding item:', err);
       alert('Failed to add item.');
@@ -189,7 +196,7 @@ const AddItem = () => {
             type="checkbox"
             id="IEMIE"
             checked={isImeiId}
-            onChange={(e) => setIsIemiId(e.target.checked)}
+           // onChange={(e) => setIsIemiId(e.target.checked)}
           />
         </div>
 

@@ -23,8 +23,17 @@ const AddItemDetails = () => {
   const [suppliers, setSuppliers] = useState([]);
   const [barcodeData, setBarcodeData] = useState('');
   const [addedItems, setAddedItems] = useState([]); // For displaying added items
-  const [isFieldsLocked, setIsFieldsLocked] = useState(false);
+  
+  const isFieldsLocked = useRef(false);
+  //const isIMEIFieldsLocked = useRef(false);
+  //const isSNFieldsLocked = useRef(false);
+
+  
+  //const [isFieldsLocked, setIsFieldsLocked]= useState(false);
+  const [isIMEIFieldsLocked, setisIMEIFieldsLocked] = useState();
+  const [isSNFieldsLocked, setisSNFieldsLocked] = useState();
   const imeiInputRef = useRef(null);
+  const snInputRef = useRef(null);
   const debounceTimerRef = useRef(null);
   const [isImeiId, setIsemiId] = useState(true);
   
@@ -51,19 +60,16 @@ const AddItemDetails = () => {
   
   //Toggle start/stop button
   const toggleFields = () => {
-    
+    // Check if required fields are filled
     if (!itemId || !salePrice || !cost || !quantity || !descriptionId || !supplierId || !dateReceived) {
       alert('Please fill in all required fields.');
       setBarcodeData('');
       setImei1('');
-      
       return;
     }
-
-    
-
-    // unLock fields and reset the form when stopping scan
-    if (isFieldsLocked) {
+  
+    // Unlock fields and reset the form when stopping scan
+    if (isFieldsLocked.current) {
       resetForm();
       setItemId('');
       setSerialNumber('');
@@ -71,122 +77,140 @@ const AddItemDetails = () => {
       setCost('');
       setDescriptionId('');
       setSupplierId('');
-      setDateReceived(new Date().toISOString().split('T')[0]); // reset to today's date
-      
+      setDateReceived(new Date().toISOString().split('T')[0]); // Reset to today's date
     }
-    //Send confirmation about item data before start scanning 
-    if(!isFieldsLocked)
-    {
-      
+  
+    // Confirm item data before starting scan
+    if (!isFieldsLocked.current) {
       const selectedItem = items.find((item) => item.itemId == itemId);
-      const selectedsupplier = suppliers.find((supplier) => supplier.supplierId == supplierId);
-      const selectedescription = descriptions.find((description) => description.descriptionId == descriptionId);
+      const selectedSupplier = suppliers.find((supplier) => supplier.supplierId == supplierId);
+      const selectedDescription = descriptions.find((description) => description.descriptionId == descriptionId);
+  
       // eslint-disable-next-line no-restricted-globals
       const userConfirmed = confirm(
-      'Are you sure you want start scan ?\n'+
-      `Item: ${selectedItem.name}\n` +
-      `Supplier: ${selectedsupplier.supplierName}\n` +
-      `Description: ${selectedescription.descriptionText}\n` +
-      `Sale Price: ${salePrice}\n` +
-      `Cost: ${cost}`
-    );
-    if (!userConfirmed) {
-      return;
-      // Proceed with the action
+        'Are you sure you want to start scanning?\n' +
+        `Item: ${selectedItem.name}\n` +
+        `Supplier: ${selectedSupplier.supplierName}\n` +
+        `Description: ${selectedDescription.descriptionText}\n` +
+        `Sale Price: ${salePrice}\n` +
+        `Cost: ${cost}`
+      );
+  
+      if (!userConfirmed) {
+        return; // Stop further execution if the user cancels
+      }
     }
-
-    }
-    setIsFieldsLocked((prev) => {
+  
+    // Set IMEI fields lock state
+    if (isImeiId) {
+      //isIMEIFieldsLocked.current = !isIMEIFieldsLocked.current;
+    setisIMEIFieldsLocked((prev) => {
     const nextState = !prev;
-
-      // Defer focusing until the DOM has updated
-    if (!prev && imeiInputRef.current) {
-      setTimeout(() => {
-        imeiInputRef.current.focus();
-      }, 0);
-    }
-
-    return nextState;
-  });
-
-
     
-  };
-
-  useEffect(() => {
-  //Handle bar code input 
-    const handleBarcodeInput = (event) => {
+        if (!prev && imeiInputRef.current) {
+          setTimeout(() => imeiInputRef.current.focus(), 0);
+        }
+        
+      return nextState;
+     });
+    }
+  
+    // Set SN fields lock state
+    else {
+      //isSNFieldsLocked.current = !isSNFieldsLocked.current;
+      setisSNFieldsLocked((prev) => {
+      const nextState = !prev;
       
-      if (event.key === 'Enter') {
-
-        if (!isFieldsLocked)
-          {
-            alert('Press start to scan');
+        if (!prev && snInputRef.current) {
+          setTimeout(() => snInputRef.current.focus(), 0);
+        }
+  
+       return nextState;
+       });
+    }
+  
+  
+    // Toggle the isFieldsLocked state and log the updated state
+    isFieldsLocked.current = !isFieldsLocked.current;
+   /* setIsFieldsLocked((prev) => {
+      const nextState = !prev;
+     
+  
+      return nextState;
+    });*/
+  };
+  useEffect(() => {
+    //Handle bar code input 
+      const handleBarcodeInput = (event) => {
+        if (event.key === 'Enter') {
+          
+          if (!isFieldsLocked.current)
+            {
+              alert('Press Start to scan');
+              setBarcodeData('');
+              setImei1('');
+              return;
+            }
+  
+          if (!itemId || !imei1 || !salePrice || !cost || !quantity || !descriptionId || !supplierId || !dateReceived) {
+            alert('Please fill in all required fields');
             setBarcodeData('');
             setImei1('');
             return;
           }
-
-        if (!itemId || !imei1 || !salePrice || !cost || !quantity || !descriptionId || !supplierId || !dateReceived) {
-          alert('Please fill in all required fields');
-          setBarcodeData('');
-          setImei1('');
-          return;
-        }
-     
-      
-
-        if (barcodeData.length !== 15) {
-          playBuzzer(); // Play buzzer sound
-          // Wait for 1 second before showing the alert
-          setTimeout(() => {
-            alert('IMEI must be exactly 15 digits');
-          }, 100);
-          
-          setBarcodeData('');
-          setImei1('');
-          return;
-        
-        }
        
+        
+  
+          if (barcodeData.length !== 15) {
+            playBuzzer(); // Play buzzer sound
+            // Wait for 1 second before showing the alert
+            setTimeout(() => {
+              alert('IMEI must be exactly 15 digits');
+            }, 100);
+            
+            setBarcodeData('');
+            setImei1('');
+            return;
+          
+          }
          
-
-  //Submit
- 
-        handleSubmit();
-        setBarcodeData('');
-      } else if (event.key !== 'Backspace') {
-        setBarcodeData((prev) => prev + event.key);
-      }
-
-      if (barcodeData.length === 0) {
-        clearTimeout(debounceTimerRef.current);
-        debounceTimerRef.current = setTimeout(() => {
+           
+  
+    //Submit
+   
+          handleSubmit();
           setBarcodeData('');
-        }, 300);
-      }
+        } else if (event.key !== 'Backspace') {
+          setBarcodeData((prev) => prev + event.key);
+        }
+  
+        if (barcodeData.length === 0) {
+          clearTimeout(debounceTimerRef.current);
+          debounceTimerRef.current = setTimeout(() => {
+            setBarcodeData('');
+          }, 300);
+        }
+      };
+      //listen to key press event 
+      window.addEventListener('keydown', handleBarcodeInput);
+  
+      return () => {
+        window.removeEventListener('keydown', handleBarcodeInput);
+        clearTimeout(debounceTimerRef.current);
+      };
+    }, [imei1]);
+  
+    const resetForm = () => {
+      // Reset only barcode data and IMEI fields, but keep the rest intact
+      setSerialNumber('');
+      setImei1('');
+      setImei2('');
+      setQuantity('1');
+      setDateReceived(new Date().toISOString().split('T')[0]);
     };
-    //listen to key press event 
-    window.addEventListener('keydown', handleBarcodeInput);
-
-    return () => {
-      window.removeEventListener('keydown', handleBarcodeInput);
-      clearTimeout(debounceTimerRef.current);
-    };
-  }, [imei1]);
-
-  const resetForm = () => {
-    // Reset only barcode data and IMEI fields, but keep the rest intact
-    setSerialNumber('');
-    setImei1('');
-    setImei2('');
-    setQuantity('1');
-    setDateReceived(new Date().toISOString().split('T')[0]);
-  };
-
+  
   const handleSubmit = async () => {
-     
-    console.log(serialNumber);
+
     // Check if IMEI exists in the database before submitting
     const imeiExists = await checkIMEIExists(imei1);
     if (imeiExists) {
@@ -262,13 +286,12 @@ const AddItemDetails = () => {
     if (selectedItem) {
       setItemId(selectedItem.itemId); // Update itemId state
       setIsemiId(selectedItem.isImeiId); // Update isImeiId state
-      console.log(selectedItem.isImeiId); // Log the value
     } else {
       console.error('Item not found!');
       // Optionally handle the case where the item is not found
     }
   }}
-  disabled={isFieldsLocked}
+  disabled={isFieldsLocked.current}
   required
 >
   <option value="">Select Item</option>
@@ -287,7 +310,8 @@ const AddItemDetails = () => {
             id="serialNumber"
             value={serialNumber}
             onChange={(e) => setSerialNumber(e.target.value)}
-            disabled={!isFieldsLocked}
+            disabled={!isSNFieldsLocked}
+            ref={snInputRef}
           />
         </div>
 
@@ -300,7 +324,7 @@ const AddItemDetails = () => {
             onChange={(e) => setImei1(e.target.value)}
             placeholder="Scan barcode here"
             autoComplete="off"
-            disabled={!isFieldsLocked}
+            disabled={!isIMEIFieldsLocked}
             ref={imeiInputRef}
           />
         </div>
@@ -312,7 +336,7 @@ const AddItemDetails = () => {
             id="imei2"
             value={imei2}
             onChange={(e) => setImei2(e.target.value)}
-            disabled={isFieldsLocked}
+            disabled={isFieldsLocked.current}
           />
         </div>
 
@@ -328,7 +352,7 @@ const AddItemDetails = () => {
                 setSalePrice(value);
               }
             }}
-            disabled={isFieldsLocked}
+            disabled={isFieldsLocked.current}
           />
         </div>
 
@@ -344,7 +368,7 @@ const AddItemDetails = () => {
                 setCost(value);
               }
             }}
-            disabled={isFieldsLocked}
+            disabled={isFieldsLocked.current}
           />
         </div>
 
@@ -355,7 +379,7 @@ const AddItemDetails = () => {
             value={descriptionId}
             onChange={(e) => setDescriptionId(e.target.value)}
             required
-            disabled={isFieldsLocked}
+            disabled={isFieldsLocked.current}
           >
             <option value="">Select Description</option>
             {descriptions.map((desc) => (
@@ -373,7 +397,7 @@ const AddItemDetails = () => {
             value={supplierId}
             onChange={(e) => setSupplierId(e.target.value)}
             required
-            disabled={isFieldsLocked}
+            disabled={isFieldsLocked.current}
           >
             <option value="">Select Supplier</option>
             {suppliers.map((supplier) => (
@@ -392,12 +416,12 @@ const AddItemDetails = () => {
             value={dateReceived}
             onChange={(e) => setDateReceived(e.target.value)}
             required
-            disabled={isFieldsLocked}
+            disabled={isFieldsLocked.current}
           />
         </div>
 
         <button type="button" onClick={toggleFields}>
-          {isFieldsLocked ? 'Stop Scan' : 'Start Scan'}
+          {isFieldsLocked.current ? 'Stop Scan' : 'Start Scan'}
         </button>
       </form>
 
