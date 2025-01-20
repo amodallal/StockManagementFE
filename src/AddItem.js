@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './styles.css';
 import { fetch_brands, fetch_categories, fetch_items, PostItem, DeleteItem, fetch_capacities, fetch_itemscapacities } from './Functions';
+import { findAllByDisplayValue } from '@testing-library/react';
 
 const AddItem = () => {
   const [name, setName] = useState('');
@@ -17,6 +18,7 @@ const AddItem = () => {
   const [itemscapacities, setItemCapacities] = useState([]); 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isFieldsLocked, setIsFieldsLocked] = useState(false); // Use useState here
   //const [isImeiId, setIsIemiId] = useState(true); // State for the checkbox
   let isImeiId= true;
   // Fetch initial data
@@ -50,7 +52,7 @@ const AddItem = () => {
 
   // Handle adding an item
   const handleAddItem = async () => {
-    if (!name || !modelNumber || !brandId || !categoryId || capacityId.length === 0) {
+    if (!name || !modelNumber || !brandId || !categoryId || (capacityId.length === 0 && !isFieldsLocked)) {
       alert('Please fill in all required fields before adding.');
       return;
     }
@@ -65,8 +67,8 @@ const AddItem = () => {
     }
 
     try {
-      
-      if (categoryId === '4')
+      //set IMEI ID to false for tablets and earphones 
+      if (categoryId === '4' || categoryId === '5')
         
       {
         isImeiId = false;
@@ -80,7 +82,7 @@ const AddItem = () => {
       const itemsResponse = await axios.get('http://localhost:5257/api/items');
       const createdItem = itemsResponse.data.find(item => item.modelNumber === modelNumber);
 
-      if (createdItem) {
+      if (createdItem && !isFieldsLocked) {
         // Send the selected capacity IDs (without any splitting or concatenating)
         await axios.post('http://localhost:5257/api/items/item-capacities', {
           ItemId: createdItem.itemId, 
@@ -178,7 +180,15 @@ const AddItem = () => {
           <select
             id="categoryId"
             value={categoryId}
-            onChange={(e) => setCategoryId(e.target.value)}
+            onChange={(e) =>{{setCategoryId(e.target.value)}
+            if (e.target.value === '5')
+            {
+              setIsFieldsLocked(true);
+            }else
+            {
+              setIsFieldsLocked(false);   
+            }
+          }}
           >
             <option value="">Select a category</option>
             {categories.map((category) => (
@@ -188,9 +198,9 @@ const AddItem = () => {
             ))}
           </select>
        
-       </div>
+        </div>
           {/* Checkbox for IsIemiId */}
-          <div className="form-group">
+        {/*  <div className="form-group">
           <label htmlFor="IEMIE">IEMIE:</label>
           <input
             type="checkbox"
@@ -199,6 +209,7 @@ const AddItem = () => {
            // onChange={(e) => setIsIemiId(e.target.checked)}
           />
         </div>
+        */}
 
         {/* Multi-Select for Capacities */}
         <div className="form-group">
@@ -206,6 +217,7 @@ const AddItem = () => {
           <select
             id="capacityId"
             value={capacityId}
+            disabled={isFieldsLocked}
             onChange={(e) => setCapacityId(Array.from(e.target.selectedOptions, option => option.value))}
             multiple
           >
