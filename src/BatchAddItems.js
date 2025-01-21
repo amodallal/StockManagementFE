@@ -55,6 +55,8 @@ const UploadItemDetailsCSV = () => {
     
                         return {
                             IMEI1: row["IMEI1"],
+                            IMEI2: row["IMEI2"],
+                            SerialNumber: row["Serial no"],
                             DateReceived: currentDate,
                             itemId: matchingItem.itemId, // Use correct itemId from the fetched data
                         };
