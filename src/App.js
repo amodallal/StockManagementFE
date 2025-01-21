@@ -5,6 +5,7 @@ import AddBrand from './AddBrand';
 import AddEmployee from './AddEmployee';
 import AddItemDetails from './AddItemDetails';
 import AddCapacity from './AddCapacity';
+import BatchAddItems from'./BatchAddItems'
 import './App.css';
 import './styles.css';  // Import the global CSS file
 import Login from './login';
@@ -19,6 +20,7 @@ function App() {
         <Route path="/AddEmployee" element={<AddEmployee  />} />
         <Route path="/AddItemDetails" element={<AddItemDetails  />} />
         <Route path="/AddCapacity" element={<AddCapacity  />} />
+        <Route path="/BatchAddItems" element={<BatchAddItems  />} />
       </Routes>
     </Router>
   );

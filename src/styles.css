@@ -65,7 +65,7 @@
 }
 
 .btn-success {
-  background-color: #28a745;
+  background-color: #a4b7a8;
 }
 
 .btn-warning {
@@ -109,8 +109,8 @@ table, th, td {
 
 /* Header Styles */
 thead th {
-  background-color: #4CAF50; /* Green background */
-  color: white; /* White text */
+  background-color: #a4b7a8; /* Green background */
+  color: rgb(0, 0, 0); /* White text */
   font-weight: bold;
   padding: 12px; /* Add padding */
   text-align: center;

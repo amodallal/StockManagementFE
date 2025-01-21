@@ -20,7 +20,7 @@ const AddItem = () => {
   const [error, setError] = useState(null);
   const [isFieldsLocked, setIsFieldsLocked] = useState(false); // Use useState here
   //const [isImeiId, setIsIemiId] = useState(true); // State for the checkbox
-  let isImeiId= true;
+  let isImeiId= false;
   // Fetch initial data
   useEffect(() => {
     const fetchData = async () => {
@@ -68,10 +68,10 @@ const AddItem = () => {
 
     try {
       //set IMEI ID to false for tablets and earphones 
-      if (categoryId === '4' || categoryId === '5')
+      if (categoryId === '3' || categoryId === '6' )
         
       {
-        isImeiId = false;
+        isImeiId = true;
       }
       const newItem = { name, modelNumber, barcode, brandId, categoryId, isImeiId }; // Include isIemiId
       

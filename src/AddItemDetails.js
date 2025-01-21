@@ -23,7 +23,7 @@ const AddItemDetails = () => {
   const [suppliers, setSuppliers] = useState([]);
   const [barcodeData, setBarcodeData] = useState('');
   const [addedItems, setAddedItems] = useState([]); // For displaying added items
-  
+  const [modelNumber, setModelNumber] = useState([]);
   const isFieldsLocked = useRef(false);
   //const isIMEIFieldsLocked = useRef(false);
   //const isSNFieldsLocked = useRef(false);
@@ -281,28 +281,42 @@ const AddItemDetails = () => {
           <select
   id="itemId"
   value={itemId}
-  onChange={(e) => {
+  onChange={(e) => { 
+    
     const selectedItem = items.find((item) => item.itemId == e.target.value); // Find the selected item by itemId
     if (selectedItem) {
-      setItemId(selectedItem.itemId); // Update itemId state
-      setIsemiId(selectedItem.isImeiId); // Update isImeiId state
+     setItemId(selectedItem.itemId); // Update itemId state
+     setIsemiId(selectedItem.isImeiId); // Update isImeiId state
+     setModelNumber(selectedItem.modelNumber);
     } else {
-      console.error('Item not found!');
+      
+      setItemId(''); // Optionally reset itemId if item is not found
+      setIsemiId(false); // Reset isImeiId state
+      setModelNumber(''); // Reset Model Number state
       // Optionally handle the case where the item is not found
     }
-  }}
+  }
+}
   disabled={isFieldsLocked.current}
   required
 >
-  <option value="">Select Item</option>
+  <option value="">Select Product</option>
   {items.map((item) => (
     <option key={item.itemId} value={item.itemId}>
       {item.name}
     </option>
   ))}
 </select>
+          <div className="form-group">
+          <label htmlFor="Model Number">Model Number</label>
+          <input
+            type="text"
+            id="ModelNumber"
+            value={modelNumber}
+            disabled = {true}
+          />
         </div>
-
+        </div>
         <div className="form-group">
           <label htmlFor="serialNumber">Serial Number:</label>
           <input
@@ -314,6 +328,7 @@ const AddItemDetails = () => {
             ref={snInputRef}
           />
         </div>
+        
 
         <div className="form-group"  >
           <label htmlFor="imei1">IMEI 1 (Scan to fill):</label>
@@ -420,7 +435,7 @@ const AddItemDetails = () => {
           />
         </div>
 
-        <button type="button" onClick={toggleFields}>
+        <button className="btn btn-success" type="button" onClick={toggleFields}>
           {isFieldsLocked.current ? 'Stop Scan' : 'Start Scan'}
         </button>
       </form>
