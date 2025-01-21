@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import Papa from "papaparse";
+import * as XLSX from "xlsx";
 import axios from "axios";
 import { fetch_items } from "./Functions";
 
-const UploadItemDetailsCSV = () => {
+const UploadItemDetailsXLSX = () => {
     const [file, setFile] = useState(null);
     const [uploadStatus, setUploadStatus] = useState("");
 
@@ -12,79 +12,81 @@ const UploadItemDetailsCSV = () => {
         setFile(uploadedFile);
     };
 
-    const processCSVFile = async () => {
+    const processXLSXFile = async () => {
         if (!file) {
-            setUploadStatus("Please upload a valid CSV file.");
+            setUploadStatus("Please upload a valid Excel file.");
             return;
         }
-    
-        Papa.parse(file, {
-            header: true,
-            skipEmptyLines: true,
-            complete: async (results) => {
-                const data = results.data;
-                const currentDate = new Date().toISOString().split("T")[0]; // Today's date
-    
-                try {
-                    let items = await fetch_items(); // Fetch all items from the API
-    
-                    // Log to check the structure of the response
-                    console.log("Fetched items:", items);
-                    console.log("Is items an array?", Array.isArray(items));
-    
-                    // Check if the response has the 'items' property, which contains the array
-                    if (items.items && Array.isArray(items.items)) {
-                        items = items.items; // Access the array inside 'items'
-                    } else {
-                        throw new Error("Fetched items are not in the expected format.");
-                    }
-    
-                    const formattedData = data.map((row) => {
-                        const modelName = row["Model Name"];
-                        if (!modelName) {
-                            throw new Error("Missing 'Model Name' in CSV row.");
-                        }
-    
-                        const matchingItem = items.find(
-                            (item) => item.modelNumber === modelName
-                        );
-    
-                        if (!matchingItem) {
-                            throw new Error(`Model Name '${modelName}' not found in items.`);
-                        }
-    
-                        return {
-                            IMEI1: row["IMEI1"],
-                            IMEI2: row["IMEI2"],
-                            SerialNumber: row["Serial no"],
-                            DateReceived: currentDate,
-                            itemId: matchingItem.itemId, // Use correct itemId from the fetched data
-                        };
-                    });
-    
-                    // Send the formatted data to the API in batches
-                    await Promise.all(
-                        formattedData.map((item) =>
-                            axios.post("http://localhost:5257/api/ItemDetails", item)
-                        )
-                    );
-    
-                    setUploadStatus("Data uploaded successfully!");
-                } catch (error) {
-                    setUploadStatus("Error processing data: " + error.message);
+
+        const reader = new FileReader();
+
+        reader.onload = async (e) => {
+            const data = e.target.result;
+            const workbook = XLSX.read(data, { type: "binary" });
+            const sheetName = workbook.SheetNames[0]; // Read the first sheet
+            const sheetData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]); // Convert to JSON
+
+            const currentDate = new Date().toISOString().split("T")[0]; // Today's date
+
+            try {
+                let items = await fetch_items(); // Fetch all items from the API
+
+                // Check if the fetched items are in the expected format
+                if (items.items && Array.isArray(items.items)) {
+                    items = items.items; // Access the array inside 'items'
+                } else {
+                    throw new Error("Fetched items are not in the expected format.");
                 }
-            },
-            error: (error) => {
-                setUploadStatus("Error reading file: " + error.message);
-            },
-        });
+
+                const formattedData = sheetData.map((row) => {
+                    const modelName = row["Model Name"];
+                    if (!modelName) {
+                        throw new Error("Missing 'Model Name' in Excel row.");
+                    }
+
+                    const matchingItem = items.find(
+                        (item) => item.modelNumber === modelName
+                    );
+
+                    if (!matchingItem) {
+                        throw new Error(`Model Name '${modelName}' not found in items.`);
+                    }
+
+                    return {
+                        imei1: row["IMEI1"],
+                        imei2: row["IMEI2"],
+                        serialNumber: row["Serial no"],
+                        dateReceived: currentDate,
+                        itemId: matchingItem.itemId, // Use correct itemId from the fetched data
+                    };
+                });
+
+                // Send the formatted data to the batch endpoint
+                const response = await axios.post(
+                    "http://localhost:5257/api/ItemDetails/batch",
+                    formattedData
+                );
+
+                setUploadStatus(
+                    `Data uploaded successfully! Server Response: ${response.data.message}`
+                );
+            } catch (error) {
+                setUploadStatus("Error processing data: " + error.message);
+            }
+        };
+
+        reader.onerror = (error) => {
+            setUploadStatus("Error reading file: " + error.message);
+        };
+
+        reader.readAsBinaryString(file);
     };
 
     return (
         <div style={{ padding: "20px" }}>
-            <h1>Upload Item Details (CSV)</h1>
-            <input type="file" accept=".csv" onChange={handleFileUpload} />
-            <button onClick={processCSVFile} style={{ marginLeft: "10px" }}>
+            <h1>Upload Item Details (Excel)</h1>
+            <input type="file" accept=".xlsx, .xls" onChange={handleFileUpload} />
+            <button onClick={processXLSXFile} style={{ marginLeft: "10px" }}>
                 Upload and Process
             </button>
             {uploadStatus && <p style={{ marginTop: "20px" }}>{uploadStatus}</p>}
@@ -92,4 +94,4 @@ const UploadItemDetailsCSV = () => {
     );
 };
 
-export default UploadItemDetailsCSV;
+export default UploadItemDetailsXLSX;
