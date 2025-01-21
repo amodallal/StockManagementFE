@@ -12,40 +12,61 @@ const UploadItemDetailsCSV = () => {
         setFile(uploadedFile);
     };
 
-    const processCSVFile = () => {
+    const processCSVFile = async () => {
         if (!file) {
             setUploadStatus("Please upload a valid CSV file.");
             return;
         }
-
+    
         Papa.parse(file, {
             header: true,
             skipEmptyLines: true,
             complete: async (results) => {
                 const data = results.data;
-
                 const currentDate = new Date().toISOString().split("T")[0]; // Today's date
-
+    
                 try {
-                    const items = await fetch_items(); // Fetch all items from the API
-
+                    let items = await fetch_items(); // Fetch all items from the API
+    
+                    // Log to check the structure of the response
+                    console.log("Fetched items:", items);
+                    console.log("Is items an array?", Array.isArray(items));
+    
+                    // Check if the response has the 'items' property, which contains the array
+                    if (items.items && Array.isArray(items.items)) {
+                        items = items.items; // Access the array inside 'items'
+                    } else {
+                        throw new Error("Fetched items are not in the expected format.");
+                    }
+    
                     const formattedData = data.map((row) => {
-                        const matchingItem = items.find((item) => item.modelNumber == row["Model Number"]);
-                        if (!matchingItem) {
-                            throw new Error(`Model Number ${row["Model Number"]} not found in items`);
+                        const modelName = row["Model Name"];
+                        if (!modelName) {
+                            throw new Error("Missing 'Model Name' in CSV row.");
                         }
-
+    
+                        const matchingItem = items.find(
+                            (item) => item.modelNumber === modelName
+                        );
+    
+                        if (!matchingItem) {
+                            throw new Error(`Model Name '${modelName}' not found in items.`);
+                        }
+    
                         return {
                             IMEI1: row["IMEI1"],
                             DateReceived: currentDate,
-                            itemId: matchingItem.item_id,
+                            itemId: matchingItem.itemId, // Use correct itemId from the fetched data
                         };
                     });
-
-                    // Send each record to the API
-                    for (let item of formattedData) {
-                        await axios.post("http://localhost:5257/api/ItemDetails", item);
-                    }
+    
+                    // Send the formatted data to the API in batches
+                    await Promise.all(
+                        formattedData.map((item) =>
+                            axios.post("http://localhost:5257/api/ItemDetails", item)
+                        )
+                    );
+    
                     setUploadStatus("Data uploaded successfully!");
                 } catch (error) {
                     setUploadStatus("Error processing data: " + error.message);
