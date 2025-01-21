@@ -52,6 +52,7 @@ const UploadItemDetailsXLSX = () => {
                         throw new Error(`Model Name '${modelName}' not found in items.`);
                     }
 
+
                     return {
                         imei1: row["IMEI1"],
                         imei2: row["IMEI2"],
