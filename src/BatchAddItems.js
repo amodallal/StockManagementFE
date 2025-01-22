@@ -43,25 +43,28 @@ const UploadItemDetailsXLSX = () => {
                     if (!modelName) {
                         throw new Error("Missing 'Model Name' in Excel row.");
                     }
-
+                
                     const matchingItem = items.find(
                         (item) => item.modelNumber === modelName
                     );
-
+                
                     if (!matchingItem) {
                         throw new Error(`Model Name '${modelName}' not found in items.`);
                     }
-
-
+                
+                    // Ensure IMEI1 and IMEI2 are strings, even if they're numbers or null
+                    const imei1 = row["IMEI1"] ? row["IMEI1"].toString().trim() : ""; // Default to empty string if null or undefined
+                    const imei2 = row["IMEI2"] ? row["IMEI2"].toString().trim() : ""; // Handle IMEI2 similarly
+                
                     return {
-                        imei1: row["IMEI1"],
-                        imei2: row["IMEI2"],
+                        imei1: imei1,
+                        imei2: imei2,
                         serialNumber: row["Serial no"],
                         dateReceived: currentDate,
                         itemId: matchingItem.itemId, // Use correct itemId from the fetched data
                     };
                 });
-
+                
                 // Send the formatted data to the batch endpoint
                 const response = await axios.post(
                     "http://localhost:5257/api/ItemDetails/batch",
