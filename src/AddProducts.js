@@ -12,7 +12,6 @@ import {
   fetch_suppliers,
   fetch_supplier_item,
 } from "./Functions";
-
 const AddItem = () => {
   const [name, setName] = useState("");
   const [modelNumber, setModelNumber] = useState("");
@@ -33,9 +32,7 @@ const AddItem = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isFieldsLocked, setIsFieldsLocked] = useState(false);
-
   let isImeiId = false;
-
   // Fetch initial data
   useEffect(() => {
     const fetchData = async () => {
@@ -72,7 +69,6 @@ const AddItem = () => {
         setLoading(false);
       }
     };
-
     fetchData();
   }, []);
   const handleAddItem = async () => {
@@ -89,23 +85,19 @@ const AddItem = () => {
       alert("Please fill in all required fields before adding.");
       return;
     }
-
     try {
       // Ensure model number is unique
       const response = await axios.get("http://localhost:5257/api/items");
       const existingItemInDB = response.data.find(
         (item) => item.modelNumber === modelNumber
       );
-
       if (existingItemInDB) {
         alert("This model number already exists. Please use a different one.");
         return;
       }
-
       if (categoryId === "3" || categoryId === "6") {
         isImeiId = true;
       }
-
       const newItem = {
         name,
         modelNumber,
@@ -114,16 +106,13 @@ const AddItem = () => {
         categoryId,
         isImeiId,
       };
-
       // Insert the item into the database
       await PostItem(newItem);
-
       // Fetch the newly created item
       const itemsResponse = await axios.get("http://localhost:5257/api/items");
       const createdItem = itemsResponse.data.find(
         (item) => item.modelNumber === modelNumber
       );
-
       if (createdItem) {
         // Add supplier, cost, and sale price to the joint table
         await axios.post("http://localhost:5257/api/items/supplier-item", {
@@ -132,15 +121,12 @@ const AddItem = () => {
           costPrice,
           salePrice,
         });
-
         if (!isFieldsLocked) {
           // Add capacities if fields are not locked
           await axios.post("http://localhost:5257/api/items/item-capacities", {
             ItemId: createdItem.itemId,
             CapacityIds: capacityId,
           });
-
-          
 
         }
         // Update capasities , suppliers ,cost and sale price
@@ -149,12 +135,8 @@ const AddItem = () => {
       
         const updatedItemsSuppliers = await fetch_supplier_item();
         setItemsSuppliers(updatedItemsSuppliers);
-        
       }
-      
-
       setItems(itemsResponse.data);
-
       // Reset fields
       setName("");
       setModelNumber("");
@@ -166,14 +148,12 @@ const AddItem = () => {
       setCostPrice("");
       setSalePrice("");
       //setItemsSuppliers("");
-    
       isImeiId = true;
     } catch (err) {
       console.error("Error adding item:", err);
       alert("Failed to add item.");
     }
   };
-
   const handleDeleteItem = async (itemId) => {
     if (window.confirm("Are you sure you want to delete this item?")) {
       await DeleteItem(itemId);
@@ -181,15 +161,12 @@ const AddItem = () => {
       setItems(response.data);
     }
   };
-
   if (loading) {
     return <p>Loading...</p>;
   }
-
   if (error) {
     return <p className="error">{error}</p>;
   }
-
   return (
     <div className="container">
       <h2 className="title">Add Product</h2>
@@ -205,7 +182,6 @@ const AddItem = () => {
             onChange={(e) => setName(e.target.value)}
           />
         </div>
-
         <div className="form-group">
           <label htmlFor="modelNumber">Model Number:</label>
           <input
@@ -215,7 +191,6 @@ const AddItem = () => {
             onChange={(e) => setModelNumber(e.target.value)}
           />
         </div>
-
         <div className="form-group">
           <label htmlFor="brandId">Brand:</label>
           <select
@@ -231,7 +206,6 @@ const AddItem = () => {
             ))}
           </select>
         </div>
-
         <div className="form-group">
           <label htmlFor="categoryId">Category:</label>
           <select
@@ -250,7 +224,6 @@ const AddItem = () => {
             ))}
           </select>
         </div>
-
         <div className="form-group">
           <label htmlFor="supplierId">Supplier:</label>
           <select
@@ -266,7 +239,6 @@ const AddItem = () => {
             ))}
           </select>
         </div>
-
         <div className="form-group">
           <label htmlFor="costPrice">Cost Price:</label>
           <input
@@ -276,7 +248,6 @@ const AddItem = () => {
             onChange={(e) => setCostPrice(e.target.value)}
           />
         </div>
-
         <div className="form-group">
           <label htmlFor="salePrice">Sale Price:</label>
           <input
@@ -286,7 +257,6 @@ const AddItem = () => {
             onChange={(e) => setSalePrice(e.target.value)}
           />
         </div>
-
         <div className="form-group">
           <label htmlFor="capacities">Capacities:</label>
           <select
@@ -307,12 +277,10 @@ const AddItem = () => {
             ))}
           </select>
         </div>
-
         <button className="btn btn-success" onClick={handleAddItem}>
           Add
         </button>
       </div>
-
       {/* Items Grid */}
       <h3 className="subtitle">Items List</h3>
       {items.length > 0 ? (
@@ -336,7 +304,6 @@ const AddItem = () => {
     const suppliersForItem = itemssuppliers.filter(
       (supplierItem) => supplierItem.itemId == item.itemId
     );
-
     return (
       <tr key={item.itemId}>
         <td>{item.name}</td>
@@ -345,8 +312,6 @@ const AddItem = () => {
         <td>
           {categories.find((c) => c.categoryId == item.categoryId)?.categoryName}
         </td>
-
-
         <td>
   {
     itemssuppliers
@@ -384,7 +349,7 @@ const AddItem = () => {
   }
 </td>
         <td>
-                  {itemscapacities
+          {itemscapacities
                     .filter((itemCapacity) => itemCapacity.itemId === item.itemId)
                     .map((itemCapacity) => (
                       <div key={`${itemCapacity.itemId}-${itemCapacity.capacityId}`}>
@@ -404,7 +369,6 @@ const AddItem = () => {
     );
   })}
 </tbody>
-
         </table>
       ) : (
         <p>No items available.</p>
@@ -412,5 +376,4 @@ const AddItem = () => {
     </div>
   );
 };
-
 export default AddItem;
