@@ -1,9 +1,9 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import AddItem from './AddItem';
+import AddProducts from './AddProducts';
 import AddBrand from './AddBrand';
 import AddEmployee from './AddEmployee';
-import AddItemDetails from './AddItemDetails';
+import AddItems from './AddItems';
 import AddCapacity from './AddCapacity';
 import BatchAddItems from'./BatchAddItems'
 import './App.css';
@@ -15,10 +15,10 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<Login />} />
-        <Route path="/AddItem" element={<AddItem />} />
+        <Route path="/AddProducts" element={<AddProducts />} />
         <Route path="/AddBrand" element={<AddBrand />} />
         <Route path="/AddEmployee" element={<AddEmployee  />} />
-        <Route path="/AddItemDetails" element={<AddItemDetails  />} />
+        <Route path="/AddItems" element={<AddItems  />} />
         <Route path="/AddCapacity" element={<AddCapacity  />} />
         <Route path="/BatchAddItems" element={<BatchAddItems  />} />
       </Routes>
