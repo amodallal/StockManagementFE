@@ -47,7 +47,59 @@ export const DeleteItem = async (itemId) => {
 
  //Get Suppliers
 
+ export const fetch_suppliers = async () => {
+  try {
+    const [supplierssRes] = await Promise.all([
+      axios.get('http://localhost:5257/api/supplier'),
+    ]);
+    return {
+      suppliers: supplierssRes.data,
+    };
+  } catch (error) {
+    console.error('Error fetching data:', error);
+    throw error;
+  }
+};
 
+
+//GET supplier-item
+
+export const fetch_supplier_item = async () => {
+  try {
+    const response = await fetch('http://localhost:5257/api/items/supplier-item');
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    
+
+    if (!Array.isArray(data)) {
+      throw new TypeError("API did not return an array");
+    }
+
+    // Process the data, assuming each object represents an item-supplier pair
+    const suppliersitems = data.map(item => {
+      
+
+      return {
+        itemId: item.itemId,
+        supplierId: item.supplierId,
+        supplierName: item.supplierName, // Assuming supplierName is directly available on the item
+        costPrice: item.costPrice,
+        salePrice: item.salePrice,
+      };
+    });
+
+    
+
+    return suppliersitems;
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    return [];  // Return an empty array to avoid further errors
+  }
+};
  //Get Descriptions
 
  

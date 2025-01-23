@@ -1,124 +1,183 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import './styles.css';
-import { fetch_brands, fetch_categories, fetch_items, PostItem, DeleteItem, fetch_capacities, fetch_itemscapacities } from './Functions';
-import { findAllByDisplayValue } from '@testing-library/react';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import "./styles.css";
+import {
+  fetch_brands,
+  fetch_categories,
+  fetch_items,
+  PostItem,
+  DeleteItem,
+  fetch_capacities,
+  fetch_itemscapacities,
+  fetch_suppliers,
+  fetch_supplier_item,
+} from "./Functions";
 
 const AddItem = () => {
-  const [name, setName] = useState('');
-  const [modelNumber, setModelNumber] = useState('');
-  const [barcode, setBarcode] = useState('');
-  const [brandId, setBrandId] = useState('');
-  const [categoryId, setCategoryId] = useState('');
+  const [name, setName] = useState("");
+  const [modelNumber, setModelNumber] = useState("");
+  const [barcode, setBarcode] = useState("");
+  const [brandId, setBrandId] = useState("");
+  const [categoryId, setCategoryId] = useState("");
+  const [capacityId, setCapacityId] = useState([]);
+  const [supplierId, setSupplierId] = useState(""); // Supplier field
+  const [costPrice, setCostPrice] = useState(""); // Cost price
+  const [salePrice, setSalePrice] = useState(""); // Sale price
   const [brands, setBrands] = useState([]);
   const [categories, setCategories] = useState([]);
   const [capacities, setCapacities] = useState([]);
+  const [suppliers, setSuppliers] = useState([]); // Supplier list
   const [items, setItems] = useState([]);
-  const [capacityId, setCapacityId] = useState([]); 
-  const [itemscapacities, setItemCapacities] = useState([]); 
+  const [itemscapacities, setItemCapacities] = useState([]);
+  const [itemssuppliers, setItemsSuppliers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isFieldsLocked, setIsFieldsLocked] = useState(false); // Use useState here
-  //const [isImeiId, setIsIemiId] = useState(true); // State for the checkbox
-  let isImeiId= false;
+  const [isFieldsLocked, setIsFieldsLocked] = useState(false);
+
+  let isImeiId = false;
+
   // Fetch initial data
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [brandsData, categoriesData, itemsData, capacitiesData , itemscapacitiesData] = await Promise.all([
+        const [
+          brandsData,
+          categoriesData,
+          itemsData,
+          capacitiesData,
+          itemscapacitiesData,
+          suppliersData,
+          itemssuppliersData,
+        ] = await Promise.all([
           fetch_brands(),
           fetch_categories(),
           fetch_items(),
           fetch_capacities(),
-          fetch_itemscapacities()
+          fetch_itemscapacities(),
+          fetch_suppliers(),
+          fetch_supplier_item(),
         ]);
-  
         setBrands(brandsData.brands);
         setCategories(categoriesData.categories);
         setItems(itemsData.items);
         setCapacities(capacitiesData.capacities);
-        setItemCapacities(itemscapacitiesData); // Update item capacities state
+        setItemCapacities(itemscapacitiesData);
+        setItemsSuppliers(itemssuppliersData);
+        setSuppliers(suppliersData.suppliers); // Set suppliers
         setLoading(false);
       } catch (err) {
-        console.error('Error fetching data:', err);
-        setError('Failed to fetch data.');
+        console.error("Error fetching data:", err);
+        setError("Failed to fetch data.");
         setLoading(false);
       }
     };
-  
+
     fetchData();
-  }, []); // Empty dependency array ensures this only runs once on initial mount
-
-  // Handle adding an item
+  }, []);
   const handleAddItem = async () => {
-    if (!name || !modelNumber || !brandId || !categoryId || (capacityId.length === 0 && !isFieldsLocked)) {
-      alert('Please fill in all required fields before adding.');
-      return;
-    }
-
-    // Check if the model number exists in the database (API)
-    const response = await axios.get('http://localhost:5257/api/items');
-    const existingItemInDB = response.data.find((item) => item.modelNumber === modelNumber);
-
-    if (existingItemInDB) {
-      alert('This model number already exists in the database. Please use a different model number.');
+    if (
+      !name ||
+      !modelNumber ||
+      !brandId ||
+      !categoryId ||
+      !supplierId ||
+      !costPrice ||
+      !salePrice ||
+      (capacityId.length === 0 && !isFieldsLocked)
+    ) {
+      alert("Please fill in all required fields before adding.");
       return;
     }
 
     try {
-      //set IMEI ID to false for tablets and earphones 
-      if (categoryId === '3' || categoryId === '6' )
-        
-      {
+      // Ensure model number is unique
+      const response = await axios.get("http://localhost:5257/api/items");
+      const existingItemInDB = response.data.find(
+        (item) => item.modelNumber === modelNumber
+      );
+
+      if (existingItemInDB) {
+        alert("This model number already exists. Please use a different one.");
+        return;
+      }
+
+      if (categoryId === "3" || categoryId === "6") {
         isImeiId = true;
       }
-      const newItem = { name, modelNumber, barcode, brandId, categoryId, isImeiId }; // Include isIemiId
-      
+
+      const newItem = {
+        name,
+        modelNumber,
+        barcode,
+        brandId,
+        categoryId,
+        isImeiId,
+      };
+
       // Insert the item into the database
       await PostItem(newItem);
 
-      // Fetch the newly created item to get its `itemId`
-      const itemsResponse = await axios.get('http://localhost:5257/api/items');
-      const createdItem = itemsResponse.data.find(item => item.modelNumber === modelNumber);
+      // Fetch the newly created item
+      const itemsResponse = await axios.get("http://localhost:5257/api/items");
+      const createdItem = itemsResponse.data.find(
+        (item) => item.modelNumber === modelNumber
+      );
 
-      if (createdItem && !isFieldsLocked) {
-        // Send the selected capacity IDs (without any splitting or concatenating)
-        await axios.post('http://localhost:5257/api/items/item-capacities', {
-          ItemId: createdItem.itemId, 
-          CapacityIds: capacityId  // Send the individual capacity ID as an array
+      if (createdItem) {
+        // Add supplier, cost, and sale price to the joint table
+        await axios.post("http://localhost:5257/api/items/supplier-item", {
+          itemId: createdItem.itemId,
+          supplierId,
+          costPrice,
+          salePrice,
         });
-         // Fetch updated capacities after adding
-         const updatedItemscapacities = await fetch_itemscapacities();
-         setItemCapacities(updatedItemscapacities);
-      }
 
-      // Fetch updated items after adding
+        if (!isFieldsLocked) {
+          // Add capacities if fields are not locked
+          await axios.post("http://localhost:5257/api/items/item-capacities", {
+            ItemId: createdItem.itemId,
+            CapacityIds: capacityId,
+          });
+
+          
+
+        }
+        // Update capasities , suppliers ,cost and sale price
+        const updatedItemscapacities = await fetch_itemscapacities();
+        setItemCapacities(updatedItemscapacities);
+      
+        const updatedItemsSuppliers = await fetch_supplier_item();
+        setItemsSuppliers(updatedItemsSuppliers);
+        
+      }
+      
+
       setItems(itemsResponse.data);
 
-      // Clear input fields
-      setName('');
-      setModelNumber('');
-      setBarcode('');
-      setBrandId('');
-      setCategoryId('');
-      setCapacityId([]);  // Clear the selected capacities
+      // Reset fields
+      setName("");
+      setModelNumber("");
+      setBarcode("");
+      setBrandId("");
+      setCategoryId("");
+      setCapacityId([]);
+      setSupplierId("");
+      setCostPrice("");
+      setSalePrice("");
+      //setItemsSuppliers("");
+    
       isImeiId = true;
-      //setIsIemiId(true); // Reset checkbox
     } catch (err) {
-      console.error('Error adding item:', err);
-      alert('Failed to add item.');
-      
+      console.error("Error adding item:", err);
+      alert("Failed to add item.");
     }
   };
 
-  // Handle deleting an item
   const handleDeleteItem = async (itemId) => {
-    if (window.confirm('Are you sure you want to delete this item?')) {
-      await DeleteItem(itemId); // Remove from the database
-
-      // Fetch updated items after deletion
-      const response = await axios.get('http://localhost:5257/api/items');
+    if (window.confirm("Are you sure you want to delete this item?")) {
+      await DeleteItem(itemId);
+      const response = await axios.get("http://localhost:5257/api/items");
       setItems(response.data);
     }
   };
@@ -173,22 +232,15 @@ const AddItem = () => {
           </select>
         </div>
 
-
-
         <div className="form-group">
           <label htmlFor="categoryId">Category:</label>
           <select
             id="categoryId"
             value={categoryId}
-            onChange={(e) =>{{setCategoryId(e.target.value)}
-            if (e.target.value === '5')
-            {
-              setIsFieldsLocked(true);
-            }else
-            {
-              setIsFieldsLocked(false);   
-            }
-          }}
+            onChange={(e) => {
+              setCategoryId(e.target.value);
+              setIsFieldsLocked(e.target.value === "5");
+            }}
           >
             <option value="">Select a category</option>
             {categories.map((category) => (
@@ -197,28 +249,55 @@ const AddItem = () => {
               </option>
             ))}
           </select>
-       
         </div>
-          {/* Checkbox for IsIemiId */}
-        {/*  <div className="form-group">
-          <label htmlFor="IEMIE">IEMIE:</label>
+
+        <div className="form-group">
+          <label htmlFor="supplierId">Supplier:</label>
+          <select
+            id="supplierId"
+            value={supplierId}
+            onChange={(e) => setSupplierId(e.target.value)}
+          >
+            <option value="">Select a supplier</option>
+            {suppliers.map((supplier) => (
+              <option key={supplier.supplierId} value={supplier.supplierId}>
+                {supplier.supplierName}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="costPrice">Cost Price:</label>
           <input
-            type="checkbox"
-            id="IEMIE"
-            checked={isImeiId}
-           // onChange={(e) => setIsIemiId(e.target.checked)}
+            type="number"
+            id="costPrice"
+            value={costPrice}
+            onChange={(e) => setCostPrice(e.target.value)}
           />
         </div>
-        */}
 
-        {/* Multi-Select for Capacities */}
         <div className="form-group">
-          <label htmlFor="capacities">Select Capacities:</label>
+          <label htmlFor="salePrice">Sale Price:</label>
+          <input
+            type="number"
+            id="salePrice"
+            value={salePrice}
+            onChange={(e) => setSalePrice(e.target.value)}
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="capacities">Capacities:</label>
           <select
             id="capacityId"
             value={capacityId}
             disabled={isFieldsLocked}
-            onChange={(e) => setCapacityId(Array.from(e.target.selectedOptions, option => option.value))}
+            onChange={(e) =>
+              setCapacityId(
+                Array.from(e.target.selectedOptions, (option) => option.value)
+              )
+            }
             multiple
           >
             {capacities.map((capacity) => (
@@ -244,18 +323,67 @@ const AddItem = () => {
               <th>Model Number</th>
               <th>Brand</th>
               <th>Category</th>
+              <th>Supplier</th>
+              <th>Cost Price</th>
+              <th>Sale Price</th>
               <th>Capacities</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {items.map((item) => (
-              <tr key={item.itemId}>
-                <td>{item.name}</td>
-                <td>{item.modelNumber}</td>
-                <td>{brands.find((b) => b.brandId === item.brandId)?.brandName || 'Unknown'}</td>
-                <td>{categories.find((c) => c.categoryId === item.categoryId)?.categoryName || 'Unknown'}</td>
-                <td>
+  {items.map((item) => {
+    // Get suppliers for the current item
+    const suppliersForItem = itemssuppliers.filter(
+      (supplierItem) => supplierItem.itemId == item.itemId
+    );
+
+    return (
+      <tr key={item.itemId}>
+        <td>{item.name}</td>
+        <td>{item.modelNumber}</td>
+        <td>{brands.find((b) => b.brandId == item.brandId)?.brandName}</td>
+        <td>
+          {categories.find((c) => c.categoryId == item.categoryId)?.categoryName}
+        </td>
+
+
+        <td>
+  {
+    itemssuppliers
+      .filter((itemSupplier) => itemSupplier.itemId === item.itemId) // Match the itemId
+      .map((itemSupplier, index) => {
+        const supplier = suppliers.find((supplier) => supplier.supplierId === itemSupplier.supplierId); // Find the corresponding supplier
+        return (
+          <div key={`${item.itemId}-${itemSupplier.supplierId}-${index}`}>
+            {supplier ? supplier.supplierName : 'Unknown'} {/* Display supplier name or 'Unknown' */}
+          </div>
+        );
+      })
+  }
+</td>
+<td>
+  {
+    itemssuppliers
+      .filter((supplierItem) => supplierItem.itemId === item.itemId)
+      .map((supplierItem, index) => (
+        <div key={`${supplierItem.itemId}-${supplierItem.supplierId}-${index}`}>
+          {supplierItem.costPrice || 'N/A'}
+        </div>
+      ))
+  }
+</td>
+<td>
+  {
+    itemssuppliers
+      .filter((supplierItem) => supplierItem.itemId === item.itemId)
+      .map((supplierItem, index) => (
+        <div key={`${supplierItem.itemId}-${supplierItem.supplierId}-${index}`}>
+          {supplierItem.salePrice || 'N/A'}
+        </div>
+      ))
+  }
+</td>
+        <td>
                   {itemscapacities
                     .filter((itemCapacity) => itemCapacity.itemId === item.itemId)
                     .map((itemCapacity) => (
@@ -264,17 +392,19 @@ const AddItem = () => {
                       </div>
                     ))}
                 </td>
-                <td>
-                  <button
-                    className="btn btn-danger"
-                    onClick={() => handleDeleteItem(item.itemId)}
-                  >
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
+        <td>
+          <button
+            className="btn btn-danger"
+            onClick={() => handleDeleteItem(item.itemId)}
+          >
+            Delete
+          </button>
+        </td>
+      </tr>
+    );
+  })}
+</tbody>
+
         </table>
       ) : (
         <p>No items available.</p>
