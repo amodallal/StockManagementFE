@@ -20,6 +20,30 @@ import axios from 'axios';
   }
 };
 
+//Get Item by ID 
+
+export const fetch_item_by_id = async (itemId) => {
+  try
+  {
+    await axios.delete(`http://localhost:5257/api/items/${itemId}`);
+    
+  } catch (error) {
+    alert('Failed to fetch item.');
+  }
+};
+
+// Get Item by Model Number
+export const fetch_item_by_mn = async (modelNumber) => {
+  try {
+    const response = await axios.get(`http://localhost:5257/api/items/bymodelnumber/${encodeURIComponent(modelNumber)}`);
+    return response.data; // Return the data from the API response
+  } catch (error) {
+    //console.error('Failed to fetch item:', error); // Log the error for debugging
+    return null; // Return null if the request fails
+  }
+};
+
+
 // Post Items
 export const PostItem = async (item) => {
   try {
@@ -102,7 +126,22 @@ export const fetch_supplier_item = async () => {
 };
  //Get Descriptions
 
- 
+ // Get Colors
+ export const fetch_colors = async () => {
+  try {
+    const [colorsRes] = await Promise.all([
+      axios.get('http://localhost:5257/api/colors'),
+    ]);
+    return {
+      colors: colorsRes.data,
+    };
+  } catch (error) {
+    console.error('Error fetching data:', error);
+    throw error;
+  }
+};
+
+
  //Get Brands
  
  export const fetch_brands = async () => {

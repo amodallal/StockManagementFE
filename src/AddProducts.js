@@ -11,10 +11,12 @@ import {
   fetch_itemscapacities,
   fetch_suppliers,
   fetch_supplier_item,
+  fetch_colors,
 } from "./Functions";
 const AddItem = () => {
   const [name, setName] = useState("");
   const [modelNumber, setModelNumber] = useState("");
+  const [description, setDescription] = useState("");
   const [barcode, setBarcode] = useState("");
   const [brandId, setBrandId] = useState("");
   const [categoryId, setCategoryId] = useState("");
@@ -23,6 +25,8 @@ const AddItem = () => {
   const [costPrice, setCostPrice] = useState(""); // Cost price
   const [salePrice, setSalePrice] = useState(""); // Sale price
   const [brands, setBrands] = useState([]);
+  const [colors, setcolors] = useState([]);
+  const [colorId, setcolorId] = useState("");
   const [categories, setCategories] = useState([]);
   const [capacities, setCapacities] = useState([]);
   const [suppliers, setSuppliers] = useState([]); // Supplier list
@@ -46,6 +50,7 @@ const AddItem = () => {
           itemscapacitiesData,
           suppliersData,
           itemssuppliersData,
+          colorsData,
         ] = await Promise.all([
           fetch_brands(),
           fetch_categories(),
@@ -54,6 +59,7 @@ const AddItem = () => {
           fetch_itemscapacities(),
           fetch_suppliers(),
           fetch_supplier_item(),
+          fetch_colors(),
         ]);
         setBrands(brandsData.brands);
         setCategories(categoriesData.categories);
@@ -62,6 +68,7 @@ const AddItem = () => {
         setItemCapacities(itemscapacitiesData);
         setItemsSuppliers(itemssuppliersData);
         setSuppliers(suppliersData.suppliers); // Set suppliers
+        setcolors(colorsData.colors);
         setLoading(false);
       } catch (err) {
         console.error("Error fetching data:", err);
@@ -80,6 +87,7 @@ const AddItem = () => {
       !supplierId ||
       !costPrice ||
       !salePrice ||
+      !colorId ||
       (capacityId.length === 0 && !isFieldsLocked)
     ) {
       alert("Please fill in all required fields before adding.");
@@ -87,8 +95,8 @@ const AddItem = () => {
     }
     try {
       // Ensure model number is unique
-      const response = await axios.get("http://localhost:5257/api/items");
-      const existingItemInDB = response.data.find(
+      const response = await fetch_items();
+      const existingItemInDB = response.items.find(
         (item) => item.modelNumber === modelNumber
       );
       if (existingItemInDB) {
@@ -101,17 +109,20 @@ const AddItem = () => {
       const newItem = {
         name,
         modelNumber,
+        description,
         barcode,
         brandId,
         categoryId,
         isImeiId,
+        colorId,
       };
       // Insert the item into the database
       await PostItem(newItem);
-      // Fetch the newly created item
+      
+      // Fetch the newly created item 
       const itemsResponse = await axios.get("http://localhost:5257/api/items");
       const createdItem = itemsResponse.data.find(
-        (item) => item.modelNumber === modelNumber
+      (item) => item.modelNumber === modelNumber
       );
       if (createdItem) {
         // Add supplier, cost, and sale price to the joint table
@@ -129,12 +140,13 @@ const AddItem = () => {
           });
 
         }
-        // Update capasities , suppliers ,cost and sale price
+        // Update capacities , suppliers ,cost and sale price
         const updatedItemscapacities = await fetch_itemscapacities();
         setItemCapacities(updatedItemscapacities);
       
         const updatedItemsSuppliers = await fetch_supplier_item();
         setItemsSuppliers(updatedItemsSuppliers);
+        
       }
       setItems(itemsResponse.data);
       // Reset fields
@@ -144,9 +156,13 @@ const AddItem = () => {
       setBrandId("");
       setCategoryId("");
       setCapacityId([]);
+      setcolorId("");
       setSupplierId("");
       setCostPrice("");
       setSalePrice("");
+      setDescription("");
+
+      
       //setItemsSuppliers("");
       isImeiId = true;
     } catch (err) {
@@ -157,8 +173,8 @@ const AddItem = () => {
   const handleDeleteItem = async (itemId) => {
     if (window.confirm("Are you sure you want to delete this item?")) {
       await DeleteItem(itemId);
-      const response = await axios.get("http://localhost:5257/api/items");
-      setItems(response.data);
+      const response = await fetch_items();
+      setItems(response.items);
     }
   };
   if (loading) {
@@ -189,6 +205,15 @@ const AddItem = () => {
             id="modelNumber"
             value={modelNumber}
             onChange={(e) => setModelNumber(e.target.value)}
+          />
+        </div>
+        <div className="form-group">
+          <label htmlFor="description">Description:</label>
+          <input
+            type="text"
+            id="description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
           />
         </div>
         <div className="form-group">
@@ -277,6 +302,22 @@ const AddItem = () => {
             ))}
           </select>
         </div>
+        <div className="form-group">
+          <label htmlFor="colorId">Color:</label>
+          <select
+            id="colorId"
+            value={colorId}
+            onChange={(e) => setcolorId(e.target.value)}
+          >
+            <option value="">Select color</option>
+            {colors.map((color) => (
+              <option key={color.colorId} value={color.colorId}>
+                {color.colorName}
+              </option>
+            ))}
+          </select>
+          </div>
+
         <button className="btn btn-success" onClick={handleAddItem}>
           Add
         </button>
@@ -289,6 +330,8 @@ const AddItem = () => {
             <tr>
               <th>Name</th>
               <th>Model Number</th>
+              <th>Description</th>
+              <th>Color</th>
               <th>Brand</th>
               <th>Category</th>
               <th>Supplier</th>
@@ -308,6 +351,8 @@ const AddItem = () => {
       <tr key={item.itemId}>
         <td>{item.name}</td>
         <td>{item.modelNumber}</td>
+        <td>{item.description}</td>
+        <td>{colors.find((cr) => cr.colorId == item.colorId)?.colorName}</td>
         <td>{brands.find((b) => b.brandId == item.brandId)?.brandName}</td>
         <td>
           {categories.find((c) => c.categoryId == item.categoryId)?.categoryName}
