@@ -12,6 +12,10 @@ import {
   fetch_suppliers,
   fetch_supplier_item,
   fetch_colors,
+  get_items_url,
+  post_supplier_item,
+  post_item_capacity,
+  fetch_item_by_mn,
 } from "./Functions";
 const AddItem = () => {
   const [name, setName] = useState("");
@@ -103,9 +107,9 @@ const AddItem = () => {
         alert("This model number already exists. Please use a different one.");
         return;
       }
-      if (categoryId === "3" || categoryId === "6") {
-        isImeiId = true;
-      }
+     // if (categoryId === "3" || categoryId === "6") {
+      //  isImeiId = true;
+      //}
       const newItem = {
         name,
         modelNumber,
@@ -113,20 +117,21 @@ const AddItem = () => {
         barcode,
         brandId,
         categoryId,
-        isImeiId,
+        isImeiId: ["3", "6"].includes(categoryId),//isImeiId,
         colorId,
       };
       // Insert the item into the database
       await PostItem(newItem);
       
       // Fetch the newly created item 
-      const itemsResponse = await axios.get("http://localhost:5257/api/items");
+      const itemsResponse = await axios.get(`${get_items_url}`);
+      console.log(itemsResponse);
       const createdItem = itemsResponse.data.find(
       (item) => item.modelNumber === modelNumber
       );
       if (createdItem) {
         // Add supplier, cost, and sale price to the joint table
-        await axios.post("http://localhost:5257/api/items/supplier-item", {
+        await axios.post(`${post_supplier_item}`, {
           itemId: createdItem.itemId,
           supplierId,
           costPrice,
@@ -134,7 +139,7 @@ const AddItem = () => {
         });
         if (!isFieldsLocked) {
           // Add capacities if fields are not locked
-          await axios.post("http://localhost:5257/api/items/item-capacities", {
+          await axios.post(`${post_item_capacity}`, {
             ItemId: createdItem.itemId,
             CapacityIds: capacityId,
           });
@@ -238,7 +243,7 @@ const AddItem = () => {
             value={categoryId}
             onChange={(e) => {
               setCategoryId(e.target.value);
-              setIsFieldsLocked(e.target.value === "5");
+              setIsFieldsLocked(e.target.value === "4");
             }}
           >
             <option value="">Select a category</option>
@@ -352,7 +357,9 @@ const AddItem = () => {
         <td>{item.name}</td>
         <td>{item.modelNumber}</td>
         <td>{item.description}</td>
-        <td>{colors.find((cr) => cr.colorId == item.colorId)?.colorName}</td>
+        <td>
+          {colors.find((color) => color.colorId === item.colorId)?.colorName || "Unknown"}
+      </td>
         <td>{brands.find((b) => b.brandId == item.brandId)?.brandName}</td>
         <td>
           {categories.find((c) => c.categoryId == item.categoryId)?.categoryName}
