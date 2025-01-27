@@ -293,8 +293,9 @@ const AddItem = () => {
                 Array.from(e.target.selectedOptions, (option) => option.value)
               )
             }
-            multiple
+            //multiple
           >
+            <option value="">Select capacity</option>
             {capacities.map((capacity) => (
               <option key={capacity.capacityID} value={capacity.capacityID}>
                 {capacity.capacityName}
@@ -337,7 +338,7 @@ const AddItem = () => {
               <th>Supplier</th>
               <th>Cost Price</th>
               <th>Sale Price</th>
-              <th>Capacities</th>
+              <th>Capacity</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -352,7 +353,7 @@ const AddItem = () => {
         <td>{item.name}</td>
         <td>{item.modelNumber}</td>
         <td>{item.description}</td>
-        <td>{colors.find((cr) => cr.colorId == item.colorId)?.colorName}</td>
+        <td>{colors.find((c) => c.colorId == item.colorId)?.colorName}</td>
         <td>{brands.find((b) => b.brandId == item.brandId)?.brandName}</td>
         <td>
           {categories.find((c) => c.categoryId == item.categoryId)?.categoryName}
