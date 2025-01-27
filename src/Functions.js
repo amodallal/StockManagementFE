@@ -1,7 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 
- //Get Employees
+//API URLS
+
+export const get_items_url = "http://localhost:5257/api/items";
+export const post_items_url = "http://localhost:5257/api/items";
+export const post_supplier_item = "http://localhost:5257/api/items/supplier-item"
+export const post_item_capacity = "http://localhost:5257/api/items/item-capacities"
+export const get_colors = "http://localhost:5257/api/colors"
+ 
+//Get Employees
 
  
  //Get Items
@@ -9,7 +17,7 @@ import axios from 'axios';
  export const fetch_items = async () => {
   try {
     const [itemsRes] = await Promise.all([
-      axios.get('http://localhost:5257/api/items'),
+      axios.get(`${get_items_url}`),
     ]);
     return {
       items: itemsRes.data,
@@ -36,18 +44,17 @@ export const fetch_item_by_id = async (itemId) => {
 export const fetch_item_by_mn = async (modelNumber) => {
   try {
     const response = await axios.get(`http://localhost:5257/api/items/bymodelnumber/${encodeURIComponent(modelNumber)}`);
-    return response.data; // Return the data from the API response
+    return response.data || null; // Return the item data or null if not found
   } catch (error) {
-    //console.error('Failed to fetch item:', error); // Log the error for debugging
+    console.error('Failed to fetch item:', error);
     return null; // Return null if the request fails
   }
 };
 
-
 // Post Items
 export const PostItem = async (item) => {
   try {
-    await axios.post('http://localhost:5257/api/items', item);
+    await axios.post(`${post_items_url}`, item);
     alert('Items submitted successfully!');
     return true;
     
@@ -130,7 +137,7 @@ export const fetch_supplier_item = async () => {
  export const fetch_colors = async () => {
   try {
     const [colorsRes] = await Promise.all([
-      axios.get('http://localhost:5257/api/colors'),
+      axios.get(`${get_colors}`),
     ]);
     return {
       colors: colorsRes.data,
