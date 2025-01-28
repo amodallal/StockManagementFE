@@ -8,9 +8,41 @@ export const post_items_url = "http://localhost:5257/api/items";
 export const post_supplier_item = "http://localhost:5257/api/items/supplier-item"
 export const post_item_capacity = "http://localhost:5257/api/items/item-capacities"
 export const get_colors = "http://localhost:5257/api/colors"
+export const get_employees = "http://localhost:5257/api/employees"
+export const get_statuses = "http://localhost:5257/api/status"
+export const get_roles = "http://localhost:5257/api/role"
  
 //Get Employees
 
+export const fetch_employees = async () => {
+  try {
+    const [employeesRes] = await Promise.all([
+      axios.get(`${get_employees}`),
+    ]);
+    return {
+      employees: employeesRes.data,
+    };
+  } catch (error) {
+    console.error('Error fetching data:', error);
+    throw error;
+  }
+};
+
+//Get Statuses
+
+export const fetch_statuses = async () => {
+  try {
+    const [statusesRes] = await Promise.all([
+      axios.get(`${get_statuses}`),
+    ]);
+    return {
+      statuses: statusesRes.data,
+    };
+  } catch (error) {
+    console.error('Error fetching data:', error);
+    throw error;
+  }
+};
  
  //Get Items
 
@@ -253,12 +285,25 @@ export const fetch_itemscapacities = async  (itemscapacities) => {
       console.error("Error fetching data:", error);
       return []; // Return an empty array to avoid further errors
   }
-}
+};
 
 
 
  //Get Roles
 
+ export const fetch_roles = async () => {
+  try {
+    const [rolesRes] = await Promise.all([
+      axios.get(`${get_roles}`),
+    ]);
+    return {
+      roles: rolesRes.data,
+    };
+  } catch (error) {
+    console.error('Error fetching data:', error);
+    throw error;
+  }
+};
 
  // Get items , suppliers , and description data
 export const fetch_itm_sup_des = async () => {

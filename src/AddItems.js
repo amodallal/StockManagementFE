@@ -49,6 +49,7 @@ const AddItemDetails = () => {
         setSuppliers(suppliers);
         setDescriptions(descriptions);
       } catch (error) {
+        
         console.error('Error fetching data', error);
       }
     };
