@@ -128,6 +128,7 @@ const TransferStock = () => {
               
               <th>Item Name</th>
               <th>Brand</th>
+              <th>Model</th>
               <th>IMEI1</th>
               <th>IMEI2</th>
               <th>Color</th>
@@ -143,6 +144,7 @@ const TransferStock = () => {
                 
                 <td>{item.itemName || 'N/A'}</td>
                 <td>{item.brandName || 'N/A'}</td>
+                <td>{item.modelNumber || 'N/A'}</td>
                 <td>{item.imei1 || 'N/A'}</td>
                 <td>{item.imei2 || 'N/A'}</td>
                 <td>{item.colorName || 'N/A'}</td>
