@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import './styles.css';
-import { fetch_roles, fetch_statuses, fetch_employees } from './Functions';
+import { fetch_roles, fetch_statuses, fetch_employees, fetch_item_by_mn_imei } from './Functions';
 
 const TransferStock = () => {
   const [statuses, setStatuses] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [roles, setRoles] = useState([]);
   const [selectedEmployee, setSelectedEmployee] = useState('');
-  const [inputText, setInputText] = useState(''); // State for input text
+  const [imeiInput, setImeiInput] = useState('');
+  const [items, setItems] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -33,12 +34,49 @@ const TransferStock = () => {
     fetchData();
   }, []);
 
+  // Debugging: Log items when state changes
+  useEffect(() => {
+    console.log("Updated Items:", items);
+  }, [items]);
+
   const handleEmployeeChange = (e) => {
     setSelectedEmployee(e.target.value);
   };
 
-  const handleInputChange = (e) => {
-    setInputText(e.target.value);
+  const handleImeiChange = (e) => {
+    setImeiInput(e.target.value);
+  };
+
+  const handleFetchItem = async () => {
+    if (!imeiInput.trim()) {
+      alert('Please enter an IMEI.');
+      return;
+    }
+
+    try {
+      const response = await fetch_item_by_mn_imei(imeiInput);
+      console.log("Fetched Item:", response); // Debugging log
+
+      if (response && response.items) {
+        const item = response.items; // Access the 'items' key
+
+        // Check if the item is not empty
+        if (item && Object.keys(item).length > 0) {
+          console.log("Item to be added:", item);
+
+          // Append the item to the list of items
+          setItems(prevItems => [...prevItems, item]);
+          setImeiInput('');
+        } else {
+          alert('Item not found.');
+        }
+      } else {
+        alert('Item not found.');
+      }
+    } catch (error) {
+      console.error('Error fetching item:', error);
+      alert('Failed to fetch item.');
+    }
   };
 
   if (loading) return <p>Loading...</p>;
@@ -57,11 +95,9 @@ const TransferStock = () => {
           onChange={handleEmployeeChange}
           className="form-control"
         >
-          <option value="" disabled>
-            Select an employee
-          </option>
+          <option value="" disabled>Select an employee</option>
           {employees
-            .filter((employee) => employee.roleName === 'Salesman') // Filter employees by roleId
+            .filter((employee) => employee.roleName === 'Salesman')
             .map((employee) => (
               <option key={employee.id} value={employee.id}>
                 {`${employee.firstName} ${employee.lastName}`}
@@ -70,19 +106,57 @@ const TransferStock = () => {
         </select>
       </div>
 
-      {/* Input Text Field */}
+      {/* IMEI Input */}
       <div className="form-group">
-        <label htmlFor="text-input">Input Text:</label>
+        <label htmlFor="imei-input">Enter IMEI:</label>
         <input
           type="text"
-          id="text-input"
-          value={inputText}
-          onChange={handleInputChange}
+          id="imei-input"
+          value={imeiInput}
+          onChange={handleImeiChange}
           className="form-control"
-          placeholder=""
+          placeholder="Enter IMEI"
         />
+        <button onClick={handleFetchItem} className="btn btn-primary mt-2">Add Item</button>
       </div>
 
+      {/* Items Table */}
+      {items.length > 0 ? (
+        <table className="table mt-4">
+          <thead>
+            <tr>
+              
+              <th>Item Name</th>
+              <th>Brand</th>
+              <th>IMEI1</th>
+              <th>IMEI2</th>
+              <th>Color</th>
+              <th>Capacity</th>
+              <th>Sale Price</th>
+              <th>Cost</th>
+              <th>Supplier</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((item, index) => (
+              <tr key={index}>
+                
+                <td>{item.itemName || 'N/A'}</td>
+                <td>{item.brandName || 'N/A'}</td>
+                <td>{item.imei1 || 'N/A'}</td>
+                <td>{item.imei2 || 'N/A'}</td>
+                <td>{item.colorName || 'N/A'}</td>
+                <td>{item.capacityName || 'N/A'}</td>
+                <td>{item.salePrice || 'N/A'}</td>
+                <td>{item.cost || 'N/A'}</td>
+                <td>{item.supplierName || 'N/A'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : (
+        <p>No items added yet.</p>
+      )}
     </div>
   );
 };

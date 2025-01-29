@@ -11,7 +11,7 @@ export const get_colors = "http://localhost:5257/api/colors"
 export const get_employees = "http://localhost:5257/api/employees"
 export const get_statuses = "http://localhost:5257/api/status"
 export const get_roles = "http://localhost:5257/api/role"
- 
+
 //Get Employees
 
 export const fetch_employees = async () => {
@@ -349,4 +349,20 @@ export const fetch_itm_sup_des = async () => {
 };
 
 
+
+  //Get item by IMEI
+  export const fetch_item_by_mn_imei = async (imei1) => {
+    try {
+      const response = await axios.get(`http://localhost:5257/api/itemdetails/getbyimei/${imei1}`);
+    
+    return {
+      items: response.data,
+    };
+  }
+     catch (error) {
+      console.error('Error fetchig data:', error);
+      return false;
+    }
+  };
+  
 
