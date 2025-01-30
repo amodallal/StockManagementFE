@@ -1,16 +1,41 @@
-import React, { useState } from "react";
+import React, { useState , useEffect} from "react";
 import * as XLSX from "xlsx";
 import axios from "axios";
-import { fetch_items } from "./Functions";
+import { fetch_items ,fetch_suppliers , fetch_supplier_item } from "./Functions";
 
 const UploadItemDetailsXLSX = () => {
+
     const [file, setFile] = useState(null);
     const [uploadStatus, setUploadStatus] = useState("");
-
+    const [suppliers, setSuppliers] = useState([]);
+    const [selectedSupplier, setSelectedSupplier] = useState('');
     const handleFileUpload = (e) => {
         const uploadedFile = e.target.files[0];
         setFile(uploadedFile);
     };
+
+    // Fetch suppliers on component mount
+    useEffect(() => {
+        const getSuppliers = async () => {
+            try {
+                const data = await fetch_suppliers();
+                setSuppliers(data.suppliers);
+            } catch (error) {
+                console.error('Error fetching suppliers:', error);
+            }
+        };
+        getSuppliers();
+    }, []);
+
+    // Handle supplier selection
+    const handleSupplierChange = (event) => {
+        setSelectedSupplier(event.target.value);
+    };
+
+
+
+
+
     const processXLSXFile = async () => {
         if (!file) {
             setUploadStatus("Please upload a valid Excel file.");
@@ -72,6 +97,8 @@ const UploadItemDetailsXLSX = () => {
         reader.readAsBinaryString(file);
     };
     return (
+       
+        
         <div style={{ padding: "20px" }}>
             <h1>Upload Item Details (Excel)</h1>
             <input type="file" accept=".xlsx, .xls" onChange={handleFileUpload} />
@@ -79,6 +106,19 @@ const UploadItemDetailsXLSX = () => {
                 Upload and Process
             </button>
             {uploadStatus && <p style={{ marginTop: "20px" }}>{uploadStatus}</p>}
+
+
+            <div>
+            <label htmlFor="supplier">Select Supplier:</label>
+            <select id="supplier" value={selectedSupplier} onChange={handleSupplierChange}>
+                <option value="">-- Select a Supplier --</option>
+                {suppliers.map((supplier) => (
+                    <option key={supplier.supplierId} value={supplier.supplierId}>
+                        {supplier.supplierName}
+                    </option>
+                ))}
+            </select>
+        </div>
         </div>
     );
 };
