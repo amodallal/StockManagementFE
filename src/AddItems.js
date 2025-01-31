@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import './styles.css';
-import { fetch_itm_sup_des } from './Functions';
+import { fetch_itm_sup } from './Functions';
 import { playBuzzer} from './Functions';
 import {checkIMEIExists } from './Functions';
 
@@ -14,7 +14,7 @@ const AddItemDetails = () => {
   const [imei2, setImei2] = useState('');
   const [salePrice, setSalePrice] = useState('');
   const [cost, setCost] = useState('');
-  const [descriptionId, setDescriptionId] = useState('');
+  //const [descriptionId, setDescriptionId] = useState('');
   const [supplierId, setSupplierId] = useState('');
   const [quantity, setQuantity] = useState('1');
   const [dateReceived, setDateReceived] = useState('');
@@ -44,10 +44,9 @@ const AddItemDetails = () => {
     //fetch Items , suppliers , description data
     const fetchData = async () => {
       try {
-        const { items, suppliers, descriptions } = await fetch_itm_sup_des();
+        const { items, suppliers } = await fetch_itm_sup();
         setItems(items);
         setSuppliers(suppliers);
-        setDescriptions(descriptions);
       } catch (error) {
         
         console.error('Error fetching data', error);
@@ -62,7 +61,7 @@ const AddItemDetails = () => {
   //Toggle start/stop button
   const toggleFields = () => {
     // Check if required fields are filled
-    if (!itemId || !salePrice || !cost || !quantity || !descriptionId || !supplierId || !dateReceived) {
+    if (!itemId || !quantity || !supplierId || !dateReceived) {
       alert('Please fill in all required fields.');
       setBarcodeData('');
       setImei1('');
@@ -76,8 +75,9 @@ const AddItemDetails = () => {
       setSerialNumber('');
       setSalePrice('');
       setCost('');
-      setDescriptionId('');
       setSupplierId('');
+      setModelNumber('');
+      setDescriptions('');
       setDateReceived(new Date().toISOString().split('T')[0]); // Reset to today's date
     }
   
@@ -85,14 +85,13 @@ const AddItemDetails = () => {
     if (!isFieldsLocked.current) {
       const selectedItem = items.find((item) => item.itemId == itemId);
       const selectedSupplier = suppliers.find((supplier) => supplier.supplierId == supplierId);
-      const selectedDescription = descriptions.find((description) => description.descriptionId == descriptionId);
   
       // eslint-disable-next-line no-restricted-globals
       const userConfirmed = confirm(
         'Are you sure you want to start scanning?\n' +
         `Item: ${selectedItem.name}\n` +
         `Supplier: ${selectedSupplier.supplierName}\n` +
-        `Description: ${selectedDescription.descriptionText}\n` +
+        
         `Sale Price: ${salePrice}\n` +
         `Cost: ${cost}`
       );
@@ -153,7 +152,7 @@ const AddItemDetails = () => {
               return;
             }
   
-          if (!itemId || !imei1 || !salePrice || !cost || !quantity || !descriptionId || !supplierId || !dateReceived) {
+          if (!itemId || !imei1 ||  !quantity || !supplierId || !dateReceived) {
             alert('Please fill in all required fields');
             setBarcodeData('');
             setImei1('');
@@ -246,7 +245,6 @@ const AddItemDetails = () => {
         imei2,
         salePrice,
         cost,
-        descriptionId,
         supplierId,
         quantity,
         dateReceived,
@@ -289,6 +287,7 @@ const AddItemDetails = () => {
      setItemId(selectedItem.itemId); // Update itemId state
      setIsemiId(selectedItem.isImeiId); // Update isImeiId state
      setModelNumber(selectedItem.modelNumber);
+     setDescriptions(selectedItem.description);
     } else {
       
       setItemId(''); // Optionally reset itemId if item is not found
@@ -389,21 +388,13 @@ const AddItemDetails = () => {
         </div>
 
         <div className="form-group">
-          <label htmlFor="descriptionId">Description:</label>
-          <select
-            id="descriptionId"
-            value={descriptionId}
-            onChange={(e) => setDescriptionId(e.target.value)}
-            required
-            disabled={isFieldsLocked.current}
-          >
-            <option value="">Select Description</option>
-            {descriptions.map((desc) => (
-              <option key={desc.descriptionId} value={desc.descriptionId}>
-                {desc.descriptionText}
-              </option>
-            ))}
-          </select>
+          <label htmlFor="Description">Description</label>
+          <input
+            type="text"
+            id="Description"
+            value={descriptions}
+            disabled = {true}
+          />
         </div>
 
         <div className="form-group">

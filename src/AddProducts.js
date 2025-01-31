@@ -243,7 +243,7 @@ const AddItem = () => {
             value={categoryId}
             onChange={(e) => {
               setCategoryId(e.target.value);
-              setIsFieldsLocked(e.target.value === "4");
+              setIsFieldsLocked(e.target.value === "5");// lock capacity field is Earphones category is selected
             }}
           >
             <option value="">Select a category</option>

@@ -306,17 +306,17 @@ export const fetch_itemscapacities = async  (itemscapacities) => {
 };
 
  // Get items , suppliers , and description data
-export const fetch_itm_sup_des = async () => {
+export const fetch_itm_sup = async () => {
     try {
-      const [itemsRes, suppliersRes, descriptionsRes] = await Promise.all([
+      const [itemsRes, suppliersRes] = await Promise.all([
         axios.get('http://localhost:5257/api/items'),
         axios.get('http://localhost:5257/api/supplier'),
-        axios.get('http://localhost:5257/api/description'),
+       
       ]);
       return {
         items: itemsRes.data,
         suppliers: suppliersRes.data,
-        descriptions: descriptionsRes.data,
+     
       };
     } catch (error) {
       console.error('Error fetching data:', error);
