@@ -10,6 +10,7 @@ const UploadItemDetailsXLSX = () => {
     const [suppliers, setSuppliers] = useState([]);
     const [selectedSupplier, setSelectedSupplier] = useState('');
     const [supplierItems, setSupplierItems] = useState([]);
+    const [quantity, setquantity] = useState(1);
 
     useEffect(() => {
         // Fetch suppliers
@@ -105,6 +106,7 @@ const UploadItemDetailsXLSX = () => {
                         supplierId: selectedSupplier,
                         cost: supplierPriceData.costPrice,
                         salePrice: supplierPriceData.salePrice,
+                        quantity:quantity,
                     };
                 });
 
@@ -162,6 +164,7 @@ const UploadItemDetailsXLSX = () => {
                     <button
                         className="btn btn-success submit-btn"
                         onClick={processXLSXFile}
+
                     >
                         Upload and Process
                     </button>

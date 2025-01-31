@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './styles.css';
-import { fetch_roles, fetch_statuses, fetch_employees, fetch_item_by_mn_imei } from './Functions';
+import { fetch_roles, fetch_statuses, fetch_employees, fetch_item_by_mn_imei  } from './Functions';
 
 const TransferStock = () => {
   const [statuses, setStatuses] = useState([]);
@@ -11,7 +11,8 @@ const TransferStock = () => {
   const [items, setItems] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
-
+  const [serialNumber, setserialNumber] = useState([]);
+  
   // Fetch initial data
   useEffect(() => {
     const fetchData = async () => {
@@ -54,6 +55,14 @@ const TransferStock = () => {
     }
 
     try {
+
+       // Check if the IMEI already exists in items
+    const imeiExists = items.some(item => item.imei1 === imeiInput || item.imei2 === imeiInput || item.serialNumber === imeiInput );
+    if (imeiExists) {
+        alert('This item is already added.');
+        return;
+    }
+
       const response = await fetch_item_by_mn_imei(imeiInput);
       console.log("Fetched Item:", response); // Debugging log
 
@@ -117,7 +126,7 @@ const TransferStock = () => {
           className="form-control"
           placeholder="Enter IMEI"
         />
-        <button onClick={handleFetchItem} className="btn btn-primary mt-2">Add Item</button>
+        <button onClick={handleFetchItem} className="btn btn-success submit-btn">Add Item</button>
       </div>
 
       {/* Items Table */}
@@ -131,27 +140,30 @@ const TransferStock = () => {
               <th>Model</th>
               <th>IMEI1</th>
               <th>IMEI2</th>
+              <th>SN</th>
               <th>Color</th>
               <th>Capacity</th>
               <th>Sale Price</th>
               <th>Cost</th>
               <th>Supplier</th>
+              <th>Quantity</th>
             </tr>
           </thead>
           <tbody>
             {items.map((item, index) => (
               <tr key={index}>
-                
                 <td>{item.itemName || 'N/A'}</td>
                 <td>{item.brandName || 'N/A'}</td>
                 <td>{item.modelNumber || 'N/A'}</td>
                 <td>{item.imei1 || 'N/A'}</td>
                 <td>{item.imei2 || 'N/A'}</td>
+                <td>{item.serialNumber || 'N/A'}</td>
                 <td>{item.colorName || 'N/A'}</td>
                 <td>{item.capacityName || 'N/A'}</td>
                 <td>{item.salePrice || 'N/A'}</td>
                 <td>{item.cost || 'N/A'}</td>
                 <td>{item.supplierName || 'N/A'}</td>
+                <td>{item.quantity || 'N/A'}</td>
               </tr>
             ))}
           </tbody>

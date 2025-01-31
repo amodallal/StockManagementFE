@@ -7,6 +7,7 @@ import AddItems from './AddItems';
 import AddCapacity from './AddCapacity';
 import BatchAddItems from'./BatchAddItems'
 import TransferStock from'./TransferStock'
+import AdminPage from './AdminPage';
 import './App.css';
 import './styles.css';  // Import the global CSS file
 import Login from './login';
@@ -15,7 +16,7 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Login />} />
+        <Route path="/" element={<AdminPage />} />
         <Route path="/AddProducts" element={<AddProducts />} />
         <Route path="/AddBrand" element={<AddBrand />} />
         <Route path="/AddEmployee" element={<AddEmployee  />} />
