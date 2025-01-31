@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import * as XLSX from "xlsx";
 import axios from "axios";
 import { fetch_items, fetch_suppliers, fetch_supplier_item } from "./Functions";
+import './styles.css'; // Importing the styles.css
 
 const UploadItemDetailsXLSX = () => {
     const [file, setFile] = useState(null);
@@ -56,7 +57,7 @@ const UploadItemDetailsXLSX = () => {
         reader.onload = async (e) => {
             const data = e.target.result;
             const workbook = XLSX.read(data, { type: "binary" });
-            const sheetName = workbook.SheetNames[0]; 
+            const sheetName = workbook.SheetNames[0];
             const sheetData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
             const currentDate = new Date().toISOString().split("T")[0];
 
@@ -102,11 +103,11 @@ const UploadItemDetailsXLSX = () => {
                         dateReceived: currentDate,
                         itemId: matchingItem.itemId,
                         supplierId: selectedSupplier,
-                        cost: supplierPriceData.costPrice, 
-                        salePrice: supplierPriceData.salePrice, 
+                        cost: supplierPriceData.costPrice,
+                        salePrice: supplierPriceData.salePrice,
                     };
                 });
-                //console.log(formattedData);
+
                 // Send data to API
                 const response = await axios.post(
                     "http://localhost:5257/api/ItemDetails/batch",
@@ -129,27 +130,45 @@ const UploadItemDetailsXLSX = () => {
     };
 
     return (
-        <div style={{ padding: "20px" }}>
-            <h1>Upload Item Details (Excel)</h1>
+        <div className="container">
+            <h2 className="title">Upload File</h2>
 
-            <div>
-                <label htmlFor="supplier">Select Supplier:</label>
-                <select id="supplier" value={selectedSupplier} onChange={handleSupplierChange}>
-                    <option value="">-- Select a Supplier --</option>
-                    {suppliers.map((supplier) => (
-                        <option key={supplier.supplierId} value={supplier.supplierId}>
-                            {supplier.supplierName}
-                        </option>
-                    ))}
-                </select>
+            <div className="form">
+                <div className="form-group">
+                    <label htmlFor="supplier">Select Supplier:</label>
+                    <select
+                        id="supplier"
+                        value={selectedSupplier}
+                        onChange={handleSupplierChange}
+                    >
+                        <option value="">-- Select a Supplier --</option>
+                        {suppliers.map((supplier) => (
+                            <option key={supplier.supplierId} value={supplier.supplierId}>
+                                {supplier.supplierName}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                <div className="form-group full-width">
+                    <input
+                        type="file"
+                        accept=".xlsx, .xls"
+                        onChange={handleFileUpload}
+                    />
+                </div>
+
+                <div className="form-group full-width">
+                    <button
+                        className="btn btn-success submit-btn"
+                        onClick={processXLSXFile}
+                    >
+                        Upload and Process
+                    </button>
+                </div>
             </div>
 
-            <input type="file" accept=".xlsx, .xls" onChange={handleFileUpload} />
-            <button onClick={processXLSXFile} style={{ marginLeft: "10px" }}>
-                Upload and Process
-            </button>
-
-            {uploadStatus && <p style={{ marginTop: "20px" }}>{uploadStatus}</p>}
+            {uploadStatus && <p className="status">{uploadStatus}</p>}
         </div>
     );
 };
