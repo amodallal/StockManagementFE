@@ -40,7 +40,8 @@ const AddItem = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isFieldsLocked, setIsFieldsLocked] = useState(false);
-  let isImeiId = false;
+  const [isImeiId, setIisImeiId] = useState(false);
+  //let isImeiId = false;
   // Fetch initial data
   useEffect(() => {
     const fetchData = async () => {
@@ -169,7 +170,8 @@ const AddItem = () => {
 
       
       //setItemsSuppliers("");
-      isImeiId = true;
+      setIisImeiId(false);
+     // isImeiId = true;
     } catch (err) {
       console.error("Error adding item:", err);
       alert("Failed to add item.");
@@ -404,7 +406,7 @@ const AddItem = () => {
                     .filter((itemCapacity) => itemCapacity.itemId === item.itemId)
                     .map((itemCapacity) => (
                       <div key={`${itemCapacity.itemId}-${itemCapacity.capacityId}`}>
-                        {itemCapacity.capacityName || 'Unknown'}
+                        {itemCapacity.capacityName || 'N/A'}
                       </div>
                     ))}
                 </td>

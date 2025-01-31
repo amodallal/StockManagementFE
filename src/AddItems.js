@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import './styles.css';
-import { fetch_itm_sup } from './Functions';
+import { fetch_itm_sup , fetch_supplier_item} from './Functions';
 import { playBuzzer} from './Functions';
 import {checkIMEIExists } from './Functions';
 
