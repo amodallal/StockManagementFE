@@ -11,7 +11,7 @@ const UploadItemDetailsXLSX = () => {
     const [selectedSupplier, setSelectedSupplier] = useState('');
     const [supplierItems, setSupplierItems] = useState([]);
     const [quantity, setquantity] = useState(1);
-
+   
     useEffect(() => {
         // Fetch suppliers
         const getSuppliers = async () => {
@@ -70,7 +70,6 @@ const UploadItemDetailsXLSX = () => {
                 } else {
                     throw new Error("Fetched items are not in the expected format.");
                 }
-
                 const formattedData = sheetData.map((row) => {
                     const modelName = row["Model Name"];
                     if (!modelName) {
@@ -92,21 +91,38 @@ const UploadItemDetailsXLSX = () => {
                             si.itemId === matchingItem.itemId &&
                             si.supplierId == selectedSupplier
                     );
+                    
 
                     if (!supplierPriceData) {
                         throw new Error(`No price found for '${modelName}' from the selected supplier.`);
                     }
-
+                    //stop processing if item idetentifier is IMEI and IMEI row is empty
+                    if((!row["IMEI1"]||row["IMEI1"].toString().trim()=="")&&(matchingItem.identifier=='IMEI')){
+                        alert("Error: IMEI1 is empty. Processing stopped.");
+                        throw new Error("Processing stopped due to empty IMEI1");
+                    }
+                    //stop processing if item idetentifier is SN and SN row is empty
+                    if((!row["Serial no"]||row["Serial no"].toString().trim()=="")&&(matchingItem.identifier=='SN')){
+                        alert("Error: Serial Number is empty. Processing stopped.");
+                        throw new Error("Processing stopped due to empty Serial Number");
+                    }
+                     //stop processing if item idetentifier is Barcode and Barcode row is empty
+                     if((!row["Barcode"]||row["Barcode"].toString().trim()=="")&&(matchingItem.identifier=='Barcode')){
+                        alert("Error: Barcode is empty. Processing stopped.");
+                        throw new Error("Processing stopped due to empty Barcode");
+                    }
                     return {
                         imei1: row["IMEI1"] ? row["IMEI1"].toString().trim() : "",
                         imei2: row["IMEI2"] ? row["IMEI2"].toString().trim() : "",
-                        serialNumber: row["Serial no"],
+                        serialNumber: row["Serial no"] ? row["Serial no"].toString().trim() : "",
+                        barcode:  row["Barcode"] ? row["Barcode"].toString().trim() : "",
                         dateReceived: currentDate,
                         itemId: matchingItem.itemId,
                         supplierId: selectedSupplier,
                         cost: supplierPriceData.costPrice,
                         salePrice: supplierPriceData.salePrice,
                         quantity:quantity,
+                        
                     };
                 });
 
