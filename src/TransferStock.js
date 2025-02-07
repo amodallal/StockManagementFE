@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import './styles.css';
-import { fetch_roles, fetch_statuses, fetch_employees, fetch_item_by_mn_imei  } from './Functions';
+import { fetch_roles, fetch_statuses, fetch_employees, fetch_item_by_mn_imei ,transferimei_url  } from './Functions';
 
 const TransferStock = () => {
   const [statuses, setStatuses] = useState([]);
@@ -37,7 +38,7 @@ const TransferStock = () => {
 
   // Debugging: Log items when state changes
   useEffect(() => {
-    console.log("Updated Items:", items);
+    
   }, [items]);
 
   const handleEmployeeChange = (e) => {
@@ -64,26 +65,31 @@ const TransferStock = () => {
     }
 
       const response = await fetch_item_by_mn_imei(imeiInput);
-      console.log("Fetched Item:", response); // Debugging log
+      
 
       if (response && response.items) {
         const item = response.items; // Access the 'items' key
 
         // Check if the item is not empty
         if (item && Object.keys(item).length > 0) {
-          console.log("Item to be added:", item);
+          
 
-          // Append the item to the list of items
+          // write where api transfer code
+          const transferimei ={
+            Employee_id: parseInt(selectedEmployee),
+            IMEI_1: imeiInput
+          };
+            
+            const response = await axios.post(transferimei_url , transferimei);          // Append the item to the list of items
+
           setItems(prevItems => [...prevItems, item]);
+          
           setImeiInput('');
-        } else {
-          alert('Item not found.');
-        }
+        } 
       } else {
         alert('Item not found.');
       }
     } catch (error) {
-      console.error('Error fetching item:', error);
       alert('Failed to fetch item.');
     }
   };
@@ -108,7 +114,7 @@ const TransferStock = () => {
           {employees
             .filter((employee) => employee.roleName === 'Salesman')
             .map((employee) => (
-              <option key={employee.id} value={employee.id}>
+              <option key={employee.employeeId} value={employee.employeeId}>
                 {`${employee.firstName} ${employee.lastName}`}
               </option>
             ))}

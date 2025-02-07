@@ -11,7 +11,7 @@ export const get_colors = "http://localhost:5257/api/colors"
 export const get_employees = "http://localhost:5257/api/employees"
 export const get_statuses = "http://localhost:5257/api/status"
 export const get_roles = "http://localhost:5257/api/role"
-
+export const transferimei_url = "http://localhost:5257/api/TransferStock/transfer-imei-stock"
 //Get Employees
 
 export const fetch_employees = async () => {

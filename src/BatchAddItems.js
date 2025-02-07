@@ -10,7 +10,7 @@ const UploadItemDetailsXLSX = () => {
     const [suppliers, setSuppliers] = useState([]);
     const [selectedSupplier, setSelectedSupplier] = useState('');
     const [supplierItems, setSupplierItems] = useState([]);
-    const [quantity, setquantity] = useState(1);
+    let quantity = 1 ;
    
     useEffect(() => {
         // Fetch suppliers
@@ -111,6 +111,20 @@ const UploadItemDetailsXLSX = () => {
                         alert("Error: Barcode is empty. Processing stopped.");
                         throw new Error("Processing stopped due to empty Barcode");
                     }
+                        if ((!row["quantity"]) && (matchingItem.identifier == 'Barcode'))
+                        {
+                            throw new Error("Processing stopped due to empty quantity field");
+                        }
+
+                    if (matchingItem.identifier == 'Barcode')
+                        {
+                            quantity = row["quantity"] ? parseInt(row["quantity"], 10) || 0 : 0;
+                        }
+
+                    if ((matchingItem.identifier == 'SN') || (matchingItem.identifier == 'IMEI'))
+                        {
+                            quantity = 1;
+                        }
                     return {
                         imei1: row["IMEI1"] ? row["IMEI1"].toString().trim() : "",
                         imei2: row["IMEI2"] ? row["IMEI2"].toString().trim() : "",
@@ -121,7 +135,7 @@ const UploadItemDetailsXLSX = () => {
                         supplierId: selectedSupplier,
                         cost: supplierPriceData.costPrice,
                         salePrice: supplierPriceData.salePrice,
-                        quantity:quantity,
+                        quantity: quantity,
                         
                     };
                 });
