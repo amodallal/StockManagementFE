@@ -25,6 +25,7 @@ const AdminPage = () => {
           </li>
           <li>
             <span onClick={() => setActivePage('employeeManagement')} className="menu-item">
+
               Employee Management
             </span>
           </li>
@@ -38,7 +39,6 @@ const AdminPage = () => {
 
       {/* Content Section */}
       <main className="content">
-        <h2>Main Page</h2>
         {activePage === 'addProducts' && <AddProducts />}
         {activePage === 'employeeManagement' && <p>Employee Management Page</p>}
         {activePage === 'itemsManagement' && <p>Items Management Page</p>}

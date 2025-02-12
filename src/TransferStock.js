@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './styles.css';
-import { fetch_roles, fetch_statuses, fetch_employees, fetch_item_by_mn_imei ,transferimei_url  } from './Functions';
+import { fetch_roles, fetch_statuses, fetch_employees, fetch_item_by_mn_imei ,transferimei_url ,transferserial_url ,fetch_item_by_serial,fetch_item_by_barcode ,transferbarcode_url,fetch_barcode_identifier } from './Functions';
 
 const TransferStock = () => {
   const [statuses, setStatuses] = useState([]);
@@ -51,48 +51,98 @@ const TransferStock = () => {
 
   const handleFetchItem = async () => {
     if (!imeiInput.trim()) {
-      alert('Please enter an IMEI.');
-      return;
-    }
-
-    try {
-
-       // Check if the IMEI already exists in items
-    const imeiExists = items.some(item => item.imei1 === imeiInput || item.imei2 === imeiInput || item.serialNumber === imeiInput );
-    if (imeiExists) {
-        alert('This item is already added.');
+        alert('Please enter an IMEI, Serial Number, or Barcode.');
         return;
     }
 
-      const response = await fetch_item_by_mn_imei(imeiInput);
-      
+    try {
+        let item = null;
 
-      if (response && response.items) {
-        const item = response.items; // Access the 'items' key
+        // First, check if IMEI exists
+        let response = await fetch_item_by_mn_imei(imeiInput);
+        if (response && response.items && Object.keys(response.items).length > 0) {
+            item = response.items;
 
-        // Check if the item is not empty
-        if (item && Object.keys(item).length > 0) {
+            // Execute IMEI transfer API
+            const transferData = {
+                Employee_id: parseInt(selectedEmployee),
+                IMEI_1: imeiInput,
+                source: "Main Warehouse",
+                destination : selectedEmployee
+
+            };
+
+            const transferResponse = await axios.post(transferimei_url, transferData);
+
+            if (transferResponse.status === 200) {
+                setItems(prevItems => [...prevItems, item]);
+                setImeiInput('');
+                return;
+            } else {
+                alert('Stock transfer failed.');
+                return;
+            }
+        }
+
+        // If not found by IMEI, check Serial Number
+        response = await fetch_item_by_serial(imeiInput);
+        if (response && response.items && Object.keys(response.items).length > 0) {
+            item = response.items;
+
+            // Execute Serial Number transfer API
+            const transferData = {
+                Employee_id: parseInt(selectedEmployee),
+                SerialNumber: imeiInput,
+                source: "Main Warehouse",
+                destination : selectedEmployee
+            };
+
+            const transferResponse = await axios.post(transferserial_url, transferData);
+
+            if (transferResponse.status === 200) {
+                setItems(prevItems => [...prevItems, item]);
+                setImeiInput('');
+                return;
+            } else {
+                alert('Stock transfer failed.');
+                return;
+            }
+        }
+
+        // If still not found, check Barcode identifier
+         response = await fetch_barcode_identifier(imeiInput);
+        if  (response && response.itemId) {
+            const quantity = prompt('Barcode detected! Please enter the quantity to transfer:');
           
-
-          // write where api transfer code
-          const transferimei ={
-            Employee_id: parseInt(selectedEmployee),
-            IMEI_1: imeiInput
-          };
-            
-            const response = await axios.post(transferimei_url , transferimei);          // Append the item to the list of items
-
-          setItems(prevItems => [...prevItems, item]);
-          
-          setImeiInput('');
-        } 
-      } else {
+            if (quantity && !isNaN(quantity) && parseInt(quantity) > 0) {
+              console.log(response.itemId);
+                // Proceed with quantity-based stock transfer API call
+                const transferData = {
+                    Employee_id: parseInt(selectedEmployee),
+                    ItemId: response.itemId,
+                    TransferQuantity: parseInt(quantity),
+                    source : "Main Warehouse",
+                    destination : selectedEmployee
+                };
+        
+                try {
+                    const transferResponse = await axios.post(transferbarcode_url, transferData);
+                    alert('Stock transferred successfully.');
+                    
+                } catch (error) {
+                    alert("Stock transfer failed. Check item availability.");
+                }
+            } else {
+                alert('Invalid quantity entered.');
+            }
+            return;
+        }
+        // If nothing is found, show "Item not found"
         alert('Item not found.');
-      }
     } catch (error) {
-      alert('Failed to fetch item.');
+        alert('Failed to fetch item.');
     }
-  };
+};
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p>{error}</p>;

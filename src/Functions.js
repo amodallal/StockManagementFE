@@ -12,6 +12,9 @@ export const get_employees = "http://localhost:5257/api/employees"
 export const get_statuses = "http://localhost:5257/api/status"
 export const get_roles = "http://localhost:5257/api/role"
 export const transferimei_url = "http://localhost:5257/api/TransferStock/transfer-imei-stock"
+export const transferserial_url = "http://localhost:5257/api/TransferStock/transfer-serial-stock"
+export const transferbarcode_url = "http://localhost:5257/api/TransferStock/transfer-stock"
+
 //Get Employees
 
 export const fetch_employees = async () => {
@@ -366,3 +369,49 @@ export const fetch_itm_sup = async () => {
   };
   
 
+  //Get item by sn
+  export const fetch_item_by_serial = async (sn) => {
+    try {
+      const response = await axios.get(`http://localhost:5257/api/itemdetails/GetBySerialNumber/${sn}`);
+    
+    return {
+      items: response.data,
+    };
+  }
+     catch (error) {
+      console.error('Error fetchig data:', error);
+      return false;
+    }
+  };
+
+
+  //Get item by sn
+  export const fetch_item_by_barcode = async (barcode) => {
+    try {
+      const response = await axios.get(`http://localhost:5257/api/itemdetails/GetBybarcode/${barcode}`);
+    
+    return {
+      items: response.data,
+    };
+  }
+     catch (error) {
+      console.error('Error fetchig data:', error);
+      return false;
+    }
+  };
+
+ 
+
+  
+ //Get Barcode identifier
+ export const fetch_barcode_identifier = async (barcode) => {
+  try {
+    const response = await axios.get(`http://localhost:5257/api/items/get-identifier/${barcode}`);
+  
+    return response.data;
+}
+   catch (error) {
+    console.error('Error fetchig data:', error);
+    return false;
+  }
+};
