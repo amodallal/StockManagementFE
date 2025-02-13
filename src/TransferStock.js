@@ -58,6 +58,11 @@ const TransferStock = () => {
     try {
         let item = null;
 
+        let identifierResponse = await fetch_barcode_identifier(imeiInput);
+
+        console.log(identifierResponse.identifier);
+
+        if (identifierResponse.identifier == "IMEI"){
         // First, check if IMEI exists
         let response = await fetch_item_by_mn_imei(imeiInput);
         if (response && response.items && Object.keys(response.items).length > 0) {
@@ -83,9 +88,11 @@ const TransferStock = () => {
                 return;
             }
         }
+      }
 
         // If not found by IMEI, check Serial Number
-        response = await fetch_item_by_serial(imeiInput);
+        if (identifierResponse.identifier == "SN"){
+        let response = await fetch_item_by_serial(imeiInput);
         if (response && response.items && Object.keys(response.items).length > 0) {
             item = response.items;
 
@@ -108,41 +115,57 @@ const TransferStock = () => {
                 return;
             }
         }
-
+      }
+       
         // If still not found, check Barcode identifier
-         response = await fetch_barcode_identifier(imeiInput);
-        if  (response && response.itemId) {
-            const quantity = prompt('Barcode detected! Please enter the quantity to transfer:');
+        let response = await fetch_barcode_identifier(imeiInput);
+        if (response && response.itemId) {
+          const quantity = prompt('Barcode detected! Please enter the quantity to transfer:');
           
-            if (quantity && !isNaN(quantity) && parseInt(quantity) > 0) {
-              console.log(response.itemId);
-                // Proceed with quantity-based stock transfer API call
-                const transferData = {
-                    Employee_id: parseInt(selectedEmployee),
-                    ItemId: response.itemId,
-                    TransferQuantity: parseInt(quantity),
-                    source : "Main Warehouse",
-                    destination : selectedEmployee
-                };
-        
-                try {
-                    const transferResponse = await axios.post(transferbarcode_url, transferData);
-                    alert('Stock transferred successfully.');
-                    
-                } catch (error) {
-                    alert("Stock transfer failed. Check item availability.");
-                }
-            } else {
-                alert('Invalid quantity entered.');
+          if (quantity && !isNaN(quantity) && parseInt(quantity) > 0) {
+            
+            // Proceed with quantity-based stock transfer API call
+            const transferData = {
+              Employee_id: parseInt(selectedEmployee),
+              ItemId: response.itemId,
+              TransferQuantity: parseInt(quantity),
+              source: "Main Warehouse",
+              destination: selectedEmployee
+            };
+    
+            try {
+              const transferResponse = await axios.post(transferbarcode_url, transferData);
+              console.log(transferResponse);
+              const barcodeItem = {
+                itemId: transferResponse.data.stock.itemId,
+                itemName: response.name, // Make sure these fields are in the response
+                brandName: transferResponse.data.stock.name,
+                modelNumber: transferResponse.data.stock.modelNumber,
+                serialNumber: transferResponse.data.stock.serialNumber,
+                salePrice: transferResponse.data.stock.salePrice,
+                cost: transferResponse.data.stock.cost,
+                supplierName: transferResponse.data.stock.supplierName,
+                quantity: transferResponse.data.stock.quantity // Use the entered quantity
+              };
+              // Add the item to the list
+              setItems(prevItems => [...prevItems, barcodeItem]);
+              alert('Stock transferred successfully.');
+              
+            } catch (error) {
+              alert("Stock transfer failed. Check item availability.");
             }
-            return;
+          } else {
+            alert('Invalid quantity entered.');
+          }
+          return;
         }
+    
         // If nothing is found, show "Item not found"
         alert('Item not found.');
-    } catch (error) {
+      } catch (error) {
         alert('Failed to fetch item.');
-    }
-};
+      }
+    };
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p>{error}</p>;
