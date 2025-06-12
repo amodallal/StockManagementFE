@@ -145,7 +145,7 @@ const TransferStock = () => {
                 salePrice: transferResponse.data.stock.salePrice,
                 cost: transferResponse.data.stock.cost,
                 supplierName: transferResponse.data.stock.supplierName,
-                quantity: transferResponse.data.stock.quantity // Use the entered quantity
+                quantity: quantity // Use the entered quantity
               };
               // Add the item to the list
               setItems(prevItems => [...prevItems, barcodeItem]);
@@ -222,8 +222,8 @@ const TransferStock = () => {
               <th>SN</th>
               <th>Color</th>
               <th>Capacity</th>
-              <th>Sale Price</th>
-              <th>Cost</th>
+             {/* <th>Sale Price</th>
+              <th>Cost</th> */}
               <th>Supplier</th>
               <th>Quantity</th>
             </tr>
@@ -239,8 +239,8 @@ const TransferStock = () => {
                 <td>{item.serialNumber || 'N/A'}</td>
                 <td>{item.colorName || 'N/A'}</td>
                 <td>{item.capacityName || 'N/A'}</td>
-                <td>{item.salePrice || 'N/A'}</td>
-                <td>{item.cost || 'N/A'}</td>
+               {/* <td>{item.salePrice || 'N/A'}</td>
+                <td>{item.cost || 'N/A'}</td>*/}  
                 <td>{item.supplierName || 'N/A'}</td>
                 <td>{item.quantity || 'N/A'}</td>
               </tr>

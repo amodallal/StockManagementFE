@@ -200,7 +200,7 @@ const AddEmployee = () => {
                     <td>{employee.firstName}</td>
                     <td>{employee.lastName}</td>
                     <td>{employee.phoneNumber}</td>
-                    <td>{getRoleName(employee.roleId)}</td>
+                    <td>{employee.roleName}</td>
                     <td>
                       <span 
                         className={`status ${employee.isActive ? 'active' : 'inactive'}`}
