@@ -89,8 +89,8 @@ const AddItem = () => {
       !modelNumber ||
       !brandId ||
       !categoryId ||
-      !supplierId ||
-      /*!costPrice ||
+    /*!supplierId ||
+      !costPrice ||
       !salePrice ||*/
       !colorId ||
       (capacityId.length === 0 && !isFieldsLocked)
@@ -134,7 +134,7 @@ const AddItem = () => {
         // Add supplier, cost, and sale price to the joint table
         await axios.post(`${post_supplier_item}`, {
           itemId: createdItem.itemId,
-          supplierId,
+          supplierId : 1004 ,
           costPrice : 0,  //disable adding cost and sale price to item_suppliers table
           salePrice : 0,  //disable adding cost and sale price to item_suppliers table
         });
@@ -245,7 +245,7 @@ const AddItem = () => {
             value={categoryId}
             onChange={(e) => {
               setCategoryId(e.target.value);
-              setIsFieldsLocked(e.target.value === "5");// lock capacity field is Earphones category is selected
+             // setIsFieldsLocked(e.target.value === "5");// lock capacity field is Earphones category is selected
             }}
           >
             <option value="">Select a category</option>
@@ -256,7 +256,7 @@ const AddItem = () => {
             ))}
           </select>
         </div>
-        <div className="form-group">
+        {/*<div className="form-group">
           <label htmlFor="supplierId">Supplier:</label>
           <select
             id="supplierId"
@@ -270,7 +270,7 @@ const AddItem = () => {
               </option>
             ))}
           </select>
-        </div>
+       */}
         {/*<div className="form-group">
          <label htmlFor="costPrice">Cost Price:</label>
           <input
@@ -343,9 +343,9 @@ const AddItem = () => {
               <th>Color</th>
               <th>Brand</th>
               <th>Category</th>
-              <th>Supplier</th>
-              <th>Cost Price</th>
-              <th>Sale Price</th>
+              {/*<th>Supplier</th>
+              <th>Cost Price</th> 
+              <th>Sale Price</th>*/}
               <th>Capacity</th>
               <th>Actions</th>
             </tr>
@@ -366,7 +366,7 @@ const AddItem = () => {
         <td>
           {categories.find((c) => c.categoryId == item.categoryId)?.categoryName}
         </td>
-        <td>
+      {/*  <td>
   {
     itemssuppliers
       .filter((itemSupplier) => itemSupplier.itemId === item.itemId) // Match the itemId
@@ -374,7 +374,7 @@ const AddItem = () => {
         const supplier = suppliers.find((supplier) => supplier.supplierId === itemSupplier.supplierId); // Find the corresponding supplier
         return (
           <div key={`${item.itemId}-${itemSupplier.supplierId}-${index}`}>
-            {supplier ? supplier.supplierName : 'Unknown'} {/* Display supplier name or 'Unknown' */}
+            {supplier ? supplier.supplierName : 'Unknown'} 
           </div>
         );
       })
@@ -401,7 +401,7 @@ const AddItem = () => {
         </div>
       ))
   }
-</td>
+</td>*/}
         <td>
           {itemscapacities
                     .filter((itemCapacity) => itemCapacity.itemId === item.itemId)
