@@ -4,6 +4,7 @@ import './styles.css';
 import { fetch_itm_sup , fetch_items,fetch_supplier_item} from './Functions';
 import { playBuzzer} from './Functions';
 import {checkIMEIExists } from './Functions';
+import {checkSNExists } from './Functions';
 
 
 // --- Helper Functions ---
@@ -155,6 +156,11 @@ const AddItemDetails = () => {
         if (!serialNumber.trim()) {
           playBuzzer();
           alert('Serial Number cannot be empty.');
+          isValid = false;
+         } else if (await checkSNExists(serialNumber)) {
+          playBuzzer();
+          alert('This serial number already exists in the database!');
+          setSerialNumber('');
           isValid = false;
         } else {
           submissionData = { serialNumber };

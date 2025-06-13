@@ -351,6 +351,24 @@ export const fetch_itm_sup = async () => {
   }
 };
 
+  //Check if IMEI exists in the database
+ export const checkSNExists = async (SN) => {
+  try {
+    const response = await axios.get(`http://localhost:5257/api/Itemdetails/CheckSN/${SN}`);
+  
+      // Check the response for the 'exists' property
+    if (response.data.exists === true) {
+      return true; // SN exists
+    } else {
+      return false; // SN does not exist
+    }
+      // If response contains data, IMEI exists
+  } catch (error) {
+    console.error('Error checking SN:', error);
+    return false;
+  }
+};
+
 
 
   //Get item by IMEI
