@@ -217,7 +217,7 @@ const AddItemDetails = () => {
   // NOTE: classNames like "container" are placeholders for your ./styles.css
   return (
     <div className="container">
-      <h2 className="title">Add Item Details</h2>
+      <h2 className="title">Add Items</h2>
         <div className="form">
           {/* --- Main static form fields --- */}
           <div className="grid">
@@ -275,19 +275,19 @@ const AddItemDetails = () => {
                <h3>Scan Item ({identifier})</h3>
                <div className="form-group">
                 <label htmlFor="serialNumber">Serial Number:</label>
-                <input type="text" id="serialNumber" value={serialNumber} onChange={(e) => setSerialNumber(e.target.value)} onKeyPress={handleKeyPress} ref={snInputRef} disabled={identifier !== 'sn'} placeholder={identifier !== 'sn' ? 'Locked' : 'Enter Serial Number'}/>
+                <input type="text" id="serialNumber" value={serialNumber} onChange={(e) => setSerialNumber(e.target.value)} onKeyPress={handleKeyPress} ref={snInputRef} disabled={identifier !== 'sn'} placeholder={identifier !== 'sn' ? 'NA' : 'Enter Serial Number'}/>
               </div>
               <div className="form-group">
                 <label htmlFor="barcode">Barcode:</label>
-                <input type="text" id="barcode" value={barcode} onChange={(e) => setBarcode(e.target.value)} onKeyPress={handleKeyPress} ref={barcodeInputRef} disabled={identifier !== 'barcode'} placeholder={identifier !== 'barcode' ? 'Locked' : 'Scan Barcode'}/>
+                <input type="text" id="barcode" value={barcode} onChange={(e) => setBarcode(e.target.value)} onKeyPress={handleKeyPress} ref={barcodeInputRef} disabled={identifier !== 'barcode'} placeholder={identifier !== 'barcode' ? 'NA' : 'Scan Barcode'}/>
               </div>
                <div className="form-group">
                 <label htmlFor="imei1">IMEI 1:</label>
-                <input type="text" id="imei1" value={imei1} onChange={(e) => setImei1(e.target.value)} onKeyPress={handleKeyPress} ref={imeiInputRef} disabled={identifier !== 'imei'} placeholder={identifier !== 'imei' ? 'Locked' : 'Scan IMEI 1'}/>
+                <input type="text" id="imei1" value={imei1} onChange={(e) => setImei1(e.target.value)} onKeyPress={handleKeyPress} ref={imeiInputRef} disabled={identifier !== 'imei'} placeholder={identifier !== 'imei' ? 'NA' : 'Scan IMEI 1'}/>
               </div>
               <div className="form-group">
                 <label htmlFor="imei2">IMEI 2:</label>
-                <input type="text" id="imei2" value={imei2} onChange={(e) => setImei2(e.target.value)} onKeyPress={handleKeyPress} disabled={identifier !== 'imei'} placeholder={identifier !== 'imei' ? 'Locked' : 'Enter/Scan IMEI 2 (Optional)'}/>
+                <input type="text" id="imei2" value={imei2} onChange={(e) => setImei2(e.target.value)} onKeyPress={handleKeyPress} disabled={identifier !== 'imei'} placeholder={identifier !== 'imei' ? 'NA' : 'Enter/Scan IMEI 2 (Optional)'}/>
               </div>
             </div>
           )}

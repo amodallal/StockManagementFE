@@ -90,8 +90,8 @@ const AddItem = () => {
       !brandId ||
       !categoryId ||
       !supplierId ||
-      !costPrice ||
-      !salePrice ||
+      /*!costPrice ||
+      !salePrice ||*/
       !colorId ||
       (capacityId.length === 0 && !isFieldsLocked)
     ) {
@@ -135,8 +135,8 @@ const AddItem = () => {
         await axios.post(`${post_supplier_item}`, {
           itemId: createdItem.itemId,
           supplierId,
-          costPrice,
-          salePrice,
+          costPrice : 0,  //disable adding cost and sale price to item_suppliers table
+          salePrice : 0,  //disable adding cost and sale price to item_suppliers table
         });
         if (!isFieldsLocked) {
           // Add capacities if fields are not locked
@@ -164,8 +164,8 @@ const AddItem = () => {
       setCapacityId([]);
       setcolorId("");
       setSupplierId("");
-      setCostPrice("");
-      setSalePrice("");
+      setCostPrice("0");
+      setSalePrice("0");
       setDescription("");
 
       
@@ -271,8 +271,8 @@ const AddItem = () => {
             ))}
           </select>
         </div>
-        <div className="form-group">
-          <label htmlFor="costPrice">Cost Price:</label>
+        {/*<div className="form-group">
+         <label htmlFor="costPrice">Cost Price:</label>
           <input
             type="number"
             id="costPrice"
@@ -288,7 +288,8 @@ const AddItem = () => {
             value={salePrice}
             onChange={(e) => setSalePrice(e.target.value)}
           />
-        </div>
+        </div> 
+        */}
         <div className="form-group">
           <label htmlFor="capacities">Capacities:</label>
           <select
