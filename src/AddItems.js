@@ -6,11 +6,6 @@ import { playBuzzer} from './Functions';
 import {checkIMEIExists } from './Functions';
 import {checkSNExists } from './Functions';
 
-
-// --- Helper Functions ---
-
-
-
 const AddItemDetails = () => {
   // State for form fields
   const [itemId, setItemId] = useState('');
@@ -22,6 +17,8 @@ const AddItemDetails = () => {
   const [cost, setCost] = useState('');
   const [supplierId, setSupplierId] = useState('');
   const [dateReceived, setDateReceived] = useState('');
+  // New state for bulk quantity
+  const [quantity, setQuantity] = useState(1);
 
   // State for UI control and data
   const [items, setItems] = useState([]);
@@ -35,6 +32,7 @@ const AddItemDetails = () => {
   const snInputRef = useRef(null);
   const imeiInputRef = useRef(null);
   const barcodeInputRef = useRef(null);
+  const quantityInputRef = useRef(null); // Ref for the new quantity input
 
   // --- EFFECTS ---
 
@@ -46,7 +44,7 @@ const AddItemDetails = () => {
     const fetchData = async () => {
       try {
         const { items, suppliers } = await fetch_itm_sup();
-        setItems(items || []); 
+        setItems(items || []);
         setSuppliers(suppliers || []);
       } catch (error) {
         console.error('Error fetching initial data:', error);
@@ -58,7 +56,6 @@ const AddItemDetails = () => {
 
   // Effect to focus on the correct input when an item is selected
   useEffect(() => {
-    // No need to check for isScanning, focus happens when identifier changes
     if (!identifier) return;
 
     const focusTimeout = setTimeout(() => {
@@ -80,7 +77,6 @@ const AddItemDetails = () => {
     return () => clearTimeout(focusTimeout);
   }, [identifier]);
 
-
   // --- HANDLERS ---
 
   const handleItemChange = (e) => {
@@ -88,10 +84,9 @@ const AddItemDetails = () => {
     const selectedItem = items.find((item) => String(item.itemId) === selectedItemId);
 
     if (selectedItem) {
-      // Basic validation to ensure required fields are filled before locking
       if (!supplierId || !salePrice || !cost) {
         alert('Please fill Supplier, Sale Price, and Cost before selecting an item.');
-        e.target.value = ''; // Reset dropdown
+        e.target.value = '';
         return;
       }
       setItemId(selectedItem.itemId);
@@ -102,8 +97,10 @@ const AddItemDetails = () => {
       setImei1('');
       setImei2('');
       setBarcode('');
+      // Reset quantity to 1 for new item selections
+      setQuantity(1);
     } else {
-      handleReset(); // Clear everything if user selects "Select Product"
+      handleReset();
     }
   };
 
@@ -120,10 +117,10 @@ const AddItemDetails = () => {
       setImei1('');
       setImei2('');
       setBarcode('');
+      setQuantity(1);
   };
 
   const handleSubmit = async () => {
-    // The form won't submit unless an identifier is present
     if (!identifier) {
       alert('Please select a valid item first.');
       return;
@@ -132,7 +129,6 @@ const AddItemDetails = () => {
     let submissionData = {};
     let isValid = true;
 
-    // The 'identifier' state is now always lowercase, so this switch will work correctly.
     switch (identifier) {
       case 'imei':
         if (!imei1 || imei1.length !== 15) {
@@ -173,6 +169,12 @@ const AddItemDetails = () => {
           playBuzzer();
           alert('Barcode cannot be empty.');
           isValid = false;
+        // Also validate the quantity for barcode items
+        } else if (isNaN(quantity) || Number(quantity) < 1) {
+            playBuzzer();
+            alert('Please enter a valid quantity of at least 1.');
+            isValid = false;
+            quantityInputRef.current?.focus();
         } else {
           submissionData = { barcode };
         }
@@ -192,7 +194,8 @@ const AddItemDetails = () => {
       supplierId,
       salePrice,
       cost,
-      quantity: '1',
+      // Use the state for quantity. It will be 1 unless changed for a barcode item.
+      quantity: String(quantity),
       dateReceived,
       ...submissionData,
     };
@@ -205,6 +208,7 @@ const AddItemDetails = () => {
       setImei1('');
       setImei2('');
       setBarcode('');
+      // Do not reset quantity here, so it can be reused for the next barcode scan
     } catch (error) {
       console.error('Error adding item detail:', error);
       alert('Failed to add item detail. Please try again.');
@@ -218,9 +222,6 @@ const AddItemDetails = () => {
     }
   };
 
-
-  // --- RENDER ---
-  // NOTE: classNames like "container" are placeholders for your ./styles.css
   return (
     <div className="container">
       <h2 className="title">Add Items</h2>
@@ -269,8 +270,8 @@ const AddItemDetails = () => {
                 <input type="text" id="Description" value={description} disabled />
               </div>
                <button type="button" onClick={handleReset} className="btn btn-success" >
-                Clear Form
-              </button>
+                 Clear Form
+               </button>
             </div>
           </div>
         </div>
@@ -278,8 +279,24 @@ const AddItemDetails = () => {
           {/* --- Dynamic Input Section --- */}
           {identifier && (
             <div className="scan-section">
-               <h3>Scan Item ({identifier})</h3>
-               <div className="form-group">
+                <h3>Scan Item ({identifier.toUpperCase()})</h3>
+                {/* Conditionally render the quantity input for barcode items */}
+                {identifier === 'barcode' && (
+                    <div className="form-group">
+                        <label htmlFor="quantity">Quantity:</label>
+                        <input
+                            type="number"
+                            id="quantity"
+                            value={quantity}
+                            onChange={(e) => setQuantity(e.target.value)}
+                            onKeyPress={handleKeyPress}
+                            ref={quantityInputRef}
+                            min="1"
+                            className="input-quantity" // Add a specific class for styling
+                        />
+                    </div>
+                )}
+              <div className="form-group">
                 <label htmlFor="serialNumber">Serial Number:</label>
                 <input type="text" id="serialNumber" value={serialNumber} onChange={(e) => setSerialNumber(e.target.value)} onKeyPress={handleKeyPress} ref={snInputRef} disabled={identifier !== 'sn'} placeholder={identifier !== 'sn' ? 'NA' : 'Enter Serial Number'}/>
               </div>
@@ -298,7 +315,7 @@ const AddItemDetails = () => {
             </div>
           )}
 
-        {/* Display Grid of Added Items */}
+        {/* Display Grid of Added Items - Now includes quantity */}
         {addedItems.length > 0 && (
             <div className="added-items">
                 <h3>Recently Added Items</h3>
@@ -307,6 +324,7 @@ const AddItemDetails = () => {
                         <tr>
                             <th>Item Name</th>
                             <th>Identifier Value</th>
+                            <th>Quantity</th>
                             <th>Sale Price</th>
                             <th>Cost</th>
                         </tr>
@@ -316,6 +334,7 @@ const AddItemDetails = () => {
                             <tr key={index}>
                                 <td>{item.itemName}</td>
                                 <td>{item.imei1 || item.serialNumber || item.barcode}</td>
+                                <td>{item.quantity}</td>
                                 <td>{item.salePrice}</td>
                                 <td>{item.cost}</td>
                             </tr>

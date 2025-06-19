@@ -212,7 +212,7 @@ const AddEmployee = () => {
                       <button 
 
                         onClick={() => updateEmployeeStatus(employee.employeeId, !employee.isActive)}
-                        className="btn btn-warning"
+                        className="btn btn-success"
                       >
                         {employee.isActive ? 'Deactivate' : 'Activate'}
                       </button>
