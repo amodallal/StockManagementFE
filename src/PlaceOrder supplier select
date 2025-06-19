@@ -8,7 +8,6 @@ import {
 const PlaceOrder = () => {
   const [scannedCode, setScannedCode] = useState('');
   const [orderItems, setOrderItems] = useState([]);
-  const [discount, setDiscount] = useState(0);
   const inputRef = useRef();
 
   const handleScan = async () => {
@@ -29,6 +28,7 @@ const PlaceOrder = () => {
 
       const isBarcode = !items;
 
+      // Handle barcode array
       if (!items) {
         result = await fetch_item_by_barcode(code);
         const barcodeItems = result?.items;
@@ -38,70 +38,67 @@ const PlaceOrder = () => {
           return;
         }
 
-        const sorted = [...barcodeItems].sort(
-          (a, b) => new Date(a.dateReceived) - new Date(b.dateReceived)
-        );
+        // Let user select the variant
+        const list = barcodeItems
+          .map((item, i) =>
+            `${i + 1}) ${item.supplierName} - $${item.salePrice} (Qty: ${item.quantity})`
+          )
+          .join('\n');
 
-        const totalStock = sorted.reduce((sum, b) => sum + b.quantity, 0);
+        const indexStr = prompt(`Multiple matches found. Select supplier:\n${list}`, '1');
+        const index = parseInt(indexStr) - 1;
 
-        const existingQtyForBarcode = orderItems
-          .filter((x) => x.barcode === code)
-          .reduce((sum, x) => sum + x.quantity, 0);
-
-        const availableStock = totalStock - existingQtyForBarcode;
-
-        if (availableStock <= 0) {
-          alert(`All stock for barcode "${code}" has already been added to the order.`);
+        if (isNaN(index) || index < 0 || index >= barcodeItems.length) {
+          alert('Invalid selection.');
           return;
         }
 
+        const selectedItem = barcodeItems[index];
+
+        const availableQty = selectedItem.quantity;
         const requestedQtyStr = prompt(
-          `Available stock: ${availableStock}\nEnter quantity to add:`,
+          `Available stock: ${availableQty}\nEnter quantity to add:`,
           '1'
         );
-        const requestedQty = parseInt(requestedQtyStr);
 
+        const requestedQty = parseInt(requestedQtyStr);
         if (!requestedQty || isNaN(requestedQty) || requestedQty <= 0) {
           alert('Invalid quantity.');
           return;
         }
 
-        if (requestedQty > availableStock) {
+        // Check if same itemDetailsId already exists (same supplier/price)
+        const existingItemIndex = orderItems.findIndex(
+          (x) => x.itemDetailsId === selectedItem.itemDetailsId
+        );
+
+        const alreadyInOrderQty =
+          existingItemIndex !== -1 ? orderItems[existingItemIndex].quantity : 0;
+
+        const totalRequestedQty = requestedQty + alreadyInOrderQty;
+
+        if (totalRequestedQty > availableQty) {
           alert(
-            `You’ve already added ${existingQtyForBarcode} of this item. Only ${availableStock} more allowed.`
+            `Not enough stock. You already added ${alreadyInOrderQty}. Only ${availableQty} total in stock.`
           );
           return;
         }
 
-        let qtyToAllocate = requestedQty;
-        const updatedOrderItems = [...orderItems];
-
-        for (const batch of sorted) {
-          if (qtyToAllocate <= 0) break;
-
-          const existing = updatedOrderItems.find(
-            (x) => x.itemDetailsId === batch.itemDetailsId
-          );
-          const alreadyQty = existing?.quantity || 0;
-          const availableQty = batch.quantity - alreadyQty;
-
-          if (availableQty <= 0) continue;
-
-          const allocateQty = Math.min(qtyToAllocate, availableQty);
-          qtyToAllocate -= allocateQty;
-
-          if (existing) {
-            existing.quantity += allocateQty;
-          } else {
-            updatedOrderItems.push({ ...batch, quantity: allocateQty });
-          }
+        if (existingItemIndex !== -1) {
+          // Update quantity
+          const updatedItems = [...orderItems];
+          updatedItems[existingItemIndex].quantity = totalRequestedQty;
+          setOrderItems(updatedItems);
+        } else {
+          selectedItem.quantity = requestedQty;
+          setOrderItems((prev) => [selectedItem, ...prev]);
         }
 
-        setOrderItems(updatedOrderItems);
         setScannedCode('');
         return;
       }
 
+      // IMEI/Serial item logic
       if (!items) {
         alert('This item does not exist in database.');
         return;
@@ -148,8 +145,6 @@ const PlaceOrder = () => {
     (sum, item) => sum + item.salePrice * item.quantity,
     0
   );
-  const vat = totalSalePrice * 0.11;
-  const grandTotal = totalSalePrice + vat - discount;
 
   return (
     <div className="container">
@@ -179,51 +174,27 @@ const PlaceOrder = () => {
                 <th>Item Name</th>
                 <th>Identifier</th>
                 <th>Supplier</th>
-                <th>Date Received</th>
                 <th>Quantity</th>
                 <th>Sale Price</th>
                 <th>Cost</th>
-                <th>Subtotal</th>
               </tr>
             </thead>
             <tbody>
-              {orderItems.map((item, i) => (
+              {orderItems.map((items, i) => (
                 <tr key={i}>
-                  <td>{item.itemName || 'Unnamed'}</td>
-                  <td>{item.imei1 || item.serialNumber || item.barcode || '—'}</td>
-                  <td>{item.supplierName}</td>
-                  <td>{new Date(item.dateReceived).toLocaleDateString()}</td>
-                  <td>{item.quantity}</td>
-                  <td>${item.salePrice?.toFixed(2) ?? '0.00'}</td>
-                  <td>${item.cost?.toFixed(2) ?? '0.00'}</td>
-                  <td>${((item.salePrice ?? 0) * item.quantity).toFixed(2)}</td>
+                  <td>{items.itemName || 'Unnamed'}</td>
+                  <td>{items.imei1 || items.serialNumber || items.barcode || '—'}</td>
+                  <td>{items.supplierName}</td>
+                  <td>{items.quantity}</td>
+                  <td>${items.salePrice?.toFixed(2) ?? '0.00'}</td>
+                  <td>${items.cost?.toFixed(2) ?? '0.00'}</td>
                 </tr>
               ))}
             </tbody>
           </table>
 
           <div className="total-summary" style={{ marginTop: '1rem', fontWeight: 'bold' }}>
-            <div>Total Sale Price: ${totalSalePrice.toFixed(2)}</div>
-            <div>VAT (11%): ${vat.toFixed(2)}</div>
-            <div>
-              Discount: $
-              <input
-  type="number"
-  value={discount}
-  onChange={(e) => {
-    const val = e.target.value;
-    setDiscount(val === '' ? '' : parseFloat(val) || 0);
-  }}
-  onFocus={(e) => {
-    if (discount === 0) e.target.select();
-  }}
-  placeholder="0"
-  style={{ width: '80px', marginLeft: '0.5rem' }}
-/>
-            </div>
-            <div style={{ marginTop: '0.5rem' }}>
-              Grand Total: ${grandTotal.toFixed(2)}
-            </div>
+            Total Sale Price: ${totalSalePrice.toFixed(2)}
           </div>
         </div>
       )}
