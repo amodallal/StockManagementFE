@@ -27,8 +27,6 @@ const PlaceOrder = () => {
         items = result?.items;
       }
 
-      const isBarcode = !items;
-
       if (!items) {
         result = await fetch_item_by_barcode(code);
         const barcodeItems = result?.items;
@@ -44,34 +42,49 @@ const PlaceOrder = () => {
 
         const totalStock = sorted.reduce((sum, b) => sum + b.quantity, 0);
 
+        if (totalStock <= 0) {
+          alert('Item is out of stock in the system.');
+          return;
+        }
+
+        const barcodeItemIds = new Set(barcodeItems.map((b) => b.itemDetailsId));
+
         const existingQtyForBarcode = orderItems
-          .filter((x) => x.barcode === code)
+          .filter((x) => barcodeItemIds.has(x.itemDetailsId))
           .reduce((sum, x) => sum + x.quantity, 0);
 
         const availableStock = totalStock - existingQtyForBarcode;
 
         if (availableStock <= 0) {
-          alert(`All stock for barcode "${code}" has already been added to the order.`);
+          alert('All available stock for this item has already been added to the current order.');
           return;
         }
-
-        const requestedQtyStr = prompt(
-          `Available stock: ${availableStock}\nEnter quantity to add:`,
-          '1'
+      const requestedQtyStr = prompt(
+      `Available stock: ${availableStock}\nEnter quantity to add:`,
+      '1'
         );
-        const requestedQty = parseInt(requestedQtyStr);
 
-        if (!requestedQty || isNaN(requestedQty) || requestedQty <= 0) {
-          alert('Invalid quantity.');
-          return;
-        }
+    const requestedQty = Number(requestedQtyStr);
 
-        if (requestedQty > availableStock) {
-          alert(
-            `You’ve already added ${existingQtyForBarcode} of this item. Only ${availableStock} more allowed.`
-          );
-          return;
-        }
+if (
+  requestedQtyStr === null || // Cancel pressed
+  requestedQtyStr.trim() === '' ||
+  isNaN(requestedQty) ||
+  requestedQty <= 0 ||
+  !Number.isInteger(requestedQty)
+) {
+  alert('Invalid quantity.');
+  return;
+}
+
+       if (requestedQty > availableStock) {
+  const baseMsg = `Only ${availableStock} available to add.`;
+  const alreadyAdded = existingQtyForBarcode > 0
+    ? ` You’ve already added ${existingQtyForBarcode} of this item.`
+    : '';
+  alert(baseMsg + alreadyAdded);
+  return;
+}
 
         let qtyToAllocate = requestedQty;
         const updatedOrderItems = [...orderItems];
@@ -151,6 +164,40 @@ const PlaceOrder = () => {
   const vat = totalSalePrice * 0.11;
   const grandTotal = totalSalePrice + vat - discount;
 
+  const placeOrder = async () => {
+    const payload = {
+      customerId: 1,
+      statusId: 13,
+      orderDiscount: discount,
+      items: orderItems.map((item) => ({
+        itemDetailsId: item.itemDetailsId,
+        quantity: item.quantity,
+        discount: 0,
+        salePrice: item.salePrice,
+      })),
+    };
+
+    try {
+      const res = await fetch('http://localhost:5257/api/orders/place', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await res.json();
+      if (res.ok) {
+        alert('Order placed successfully!');
+        setOrderItems([]);
+        setDiscount(0);
+      } else {
+        alert('Error: ' + result.error);
+      }
+    } catch (err) {
+      console.error('Place Order Error:', err);
+      alert('Failed to place order.');
+    }
+  };
+
   return (
     <div className="container">
       <h2 className="title">Place Order</h2>
@@ -208,23 +255,39 @@ const PlaceOrder = () => {
             <div>
               Discount: $
               <input
-  type="number"
-  value={discount}
-  onChange={(e) => {
-    const val = e.target.value;
-    setDiscount(val === '' ? '' : parseFloat(val) || 0);
-  }}
-  onFocus={(e) => {
-    if (discount === 0) e.target.select();
-  }}
-  placeholder="0"
-  style={{ width: '80px', marginLeft: '0.5rem' }}
-/>
+                type="number"
+                value={discount}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setDiscount(val === '' ? '' : parseFloat(val) || 0);
+                }}
+                onFocus={(e) => {
+                  if (discount === 0) e.target.select();
+                }}
+                placeholder="0"
+                style={{ width: '80px', marginLeft: '0.5rem' }}
+              />
             </div>
             <div style={{ marginTop: '0.5rem' }}>
               Grand Total: ${grandTotal.toFixed(2)}
             </div>
           </div>
+
+          <button
+            onClick={placeOrder}
+            style={{
+              marginTop: '1rem',
+              padding: '0.5rem 1rem',
+              fontWeight: 'bold',
+              backgroundColor: '#28a745',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+            }}
+          >
+            Place Order
+          </button>
         </div>
       )}
     </div>
