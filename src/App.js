@@ -9,6 +9,7 @@ import BatchAddItems from'./BatchAddItems'
 import TransferStock from'./TransferStock'
 import AdminPage from './AdminPage';
 import PlaceOrder from './PlaceOrder';
+import CancelOrder from './CancelOrder';
 import './App.css';
 import './styles.css';  // Import the global CSS file
 import Login from './login';
@@ -26,6 +27,7 @@ function App() {
         <Route path="/BatchAddItems" element={<BatchAddItems  />} />
         <Route path="/TransferStock" element={<TransferStock  />} />
         <Route path="/PlaceOrder" element={<PlaceOrder  />} />
+        <Route path="/CancelOrder" element={<CancelOrder  />} />
       </Routes>
     </Router>
   );

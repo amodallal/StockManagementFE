@@ -48,7 +48,6 @@ const PlaceOrder = () => {
         }
 
         const barcodeItemIds = new Set(barcodeItems.map((b) => b.itemDetailsId));
-
         const existingQtyForBarcode = orderItems
           .filter((x) => barcodeItemIds.has(x.itemDetailsId))
           .reduce((sum, x) => sum + x.quantity, 0);
@@ -59,32 +58,30 @@ const PlaceOrder = () => {
           alert('All available stock for this item has already been added to the current order.');
           return;
         }
-      const requestedQtyStr = prompt(
-      `Available stock: ${availableStock}\nEnter quantity to add:`,
-      '1'
+
+        const requestedQtyStr = prompt(
+          `Available stock: ${availableStock}\nEnter quantity to add:`,
+          '1'
         );
+        const requestedQty = Number(requestedQtyStr);
 
-    const requestedQty = Number(requestedQtyStr);
+        if (
+          requestedQtyStr === null ||
+          requestedQtyStr.trim() === '' ||
+          isNaN(requestedQty) ||
+          requestedQty <= 0 ||
+          !Number.isInteger(requestedQty)
+        ) {
+          alert('Invalid quantity.');
+          return;
+        }
 
-if (
-  requestedQtyStr === null || // Cancel pressed
-  requestedQtyStr.trim() === '' ||
-  isNaN(requestedQty) ||
-  requestedQty <= 0 ||
-  !Number.isInteger(requestedQty)
-) {
-  alert('Invalid quantity.');
-  return;
-}
-
-       if (requestedQty > availableStock) {
-  const baseMsg = `Only ${availableStock} available to add.`;
-  const alreadyAdded = existingQtyForBarcode > 0
-    ? ` You’ve already added ${existingQtyForBarcode} of this item.`
-    : '';
-  alert(baseMsg + alreadyAdded);
-  return;
-}
+        if (requestedQty > availableStock) {
+          const msg = `Only ${availableStock} available to add.` +
+            (existingQtyForBarcode > 0 ? ` You’ve already added ${existingQtyForBarcode}.` : '');
+          alert(msg);
+          return;
+        }
 
         let qtyToAllocate = requestedQty;
         const updatedOrderItems = [...orderItems];
@@ -92,9 +89,7 @@ if (
         for (const batch of sorted) {
           if (qtyToAllocate <= 0) break;
 
-          const existing = updatedOrderItems.find(
-            (x) => x.itemDetailsId === batch.itemDetailsId
-          );
+          const existing = updatedOrderItems.find(x => x.itemDetailsId === batch.itemDetailsId);
           const alreadyQty = existing?.quantity || 0;
           const availableQty = batch.quantity - alreadyQty;
 
@@ -115,35 +110,20 @@ if (
         return;
       }
 
-      if (!items) {
-        alert('This item does not exist in database.');
+      if (!items || items.quantity <= 0) {
+        alert(`Item "${items?.itemName || 'Unnamed'}" is out of stock.`);
         return;
       }
 
-      if (items.quantity <= 0) {
-        alert(
-          `Item "${items.itemName || items.modelNumber || 'Unnamed'}" is out of stock.`
-        );
-        return;
-      }
-
-      const exists = orderItems.some(
-        (x) => x.itemDetailsId === items.itemDetailsId
-      );
+      const exists = orderItems.some(x => x.itemDetailsId === items.itemDetailsId);
       if (exists) {
-        const name =
-          items.itemName ||
-          items.modelNumber ||
-          items.imei1 ||
-          items.serialNumber ||
-          items.barcode ||
-          'unknown';
+        const name = items.itemName || items.modelNumber || items.imei1 || items.serialNumber || items.barcode || 'unknown';
         alert(`Item "${name}" already added.`);
         return;
       }
 
       items.quantity = 1;
-      setOrderItems((prev) => [items, ...prev]);
+      setOrderItems(prev => [items, ...prev]);
       setScannedCode('');
     } catch (err) {
       console.error('Error fetching item:', err);
@@ -157,23 +137,16 @@ if (
     if (e.key === 'Enter') handleScan();
   };
 
-  const totalSalePrice = orderItems.reduce(
-    (sum, item) => sum + item.salePrice * item.quantity,
-    0
-  );
-  const vat = totalSalePrice * 0.11;
-  const grandTotal = totalSalePrice + vat - discount;
-
   const placeOrder = async () => {
     const payload = {
       customerId: 1,
       statusId: 13,
       orderDiscount: discount,
-      items: orderItems.map((item) => ({
+      items: orderItems.map(item => ({
         itemDetailsId: item.itemDetailsId,
         quantity: item.quantity,
         discount: 0,
-        salePrice: item.salePrice,
+        salePrice: item.salePrice
       })),
     };
 
@@ -186,9 +159,10 @@ if (
 
       const result = await res.json();
       if (res.ok) {
-        alert('Order placed successfully!');
+        alert(`Order placed successfully! Order ID: ${result.orderId ?? 'N/A'}`);
         setOrderItems([]);
         setDiscount(0);
+        setScannedCode('');
       } else {
         alert('Error: ' + result.error);
       }
@@ -197,6 +171,10 @@ if (
       alert('Failed to place order.');
     }
   };
+
+  const totalSalePrice = orderItems.reduce((sum, item) => sum + item.salePrice * item.quantity, 0);
+  const vat = totalSalePrice * 0.11;
+  const grandTotal = totalSalePrice + vat - discount;
 
   return (
     <div className="container">
