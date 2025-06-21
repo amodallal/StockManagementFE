@@ -10,6 +10,7 @@ import TransferStock from'./TransferStock'
 import AdminPage from './AdminPage';
 import PlaceOrder from './PlaceOrder';
 import CancelOrder from './CancelOrder';
+import ReturnItems from './ReturnItems.js';
 import './App.css';
 import './styles.css';  // Import the global CSS file
 import Login from './login';
@@ -28,6 +29,7 @@ function App() {
         <Route path="/TransferStock" element={<TransferStock  />} />
         <Route path="/PlaceOrder" element={<PlaceOrder  />} />
         <Route path="/CancelOrder" element={<CancelOrder  />} />
+        <Route path="/ReturnItems" element={<ReturnItems  />} />
       </Routes>
     </Router>
   );
