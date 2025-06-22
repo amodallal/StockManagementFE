@@ -173,8 +173,10 @@ const PlaceOrder = () => {
   };
 
   const totalSalePrice = orderItems.reduce((sum, item) => sum + item.salePrice * item.quantity, 0);
-  const vat = totalSalePrice * 0.11;
-  const grandTotal = totalSalePrice + vat - discount;
+const discountedPrice = totalSalePrice - discount;
+const vat = discountedPrice * 0.11;
+const grandTotal = discountedPrice + vat;
+
 
   return (
     <div className="container">
