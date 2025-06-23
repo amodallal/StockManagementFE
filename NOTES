@@ -1,12 +1,17 @@
+create admin login
+create salesman login
+create admin page - done
+create salesman page
 Create Color -done
 Create Cpacity -done
 Create Supplier 
 Create Customer
-Create Employee
+Create salesman
 Create product - done
 Batch Add items - done
-Scan barcode/IMEI/SN items - done
-Place Order
-Cancel Order
-Return Order
-FIX RETURNED ITEMS IN ORDERS WITH DISCOUNT
+Scan add barcode/IMEI/SN items - done
+transfer stock to salesman - done
+Place Order - done need to add per item discount
+Cancel Order - done
+Return Order - done need to update per item disount return
+create salesman mobile app
