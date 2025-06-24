@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef,useEffect } from 'react';
 import {
   fetch_item_by_mn_imei,
   fetch_item_by_serial,
@@ -9,7 +9,25 @@ const PlaceOrder = () => {
   const [scannedCode, setScannedCode] = useState('');
   const [orderItems, setOrderItems] = useState([]);
   const [discount, setDiscount] = useState(0);
+  const [customers, setCustomers] = useState([]);
+  const [selectedCustomerId, setSelectedCustomerId] = useState('');
   const inputRef = useRef();
+
+
+useEffect(() => {
+    const fetchCustomers = async () => {
+      try {
+        const res = await fetch('http://localhost:5257/api/customers');
+        const data = await res.json();
+        setCustomers(data);
+      } catch (err) {
+        console.error('Failed to fetch customers:', err);
+      }
+    };
+
+    fetchCustomers();
+  }, []);
+
 
   const handleScan = async () => {
     const code = scannedCode.trim();
@@ -146,7 +164,7 @@ const PlaceOrder = () => {
     }
 
     const payload = {
-      customerId: 1,
+      customerId: parseInt(selectedCustomerId),
       statusId: 13,
       orderDiscount: discount,
       employeeId: employee.employeeId, // ✅ Pass logged-in employee
@@ -190,6 +208,23 @@ const PlaceOrder = () => {
   return (
     <div className="container">
       <h2 className="title">Place Order</h2>
+
+
+      <div className="form-group">
+        <label>Select Customer:</label>
+        <select
+          value={selectedCustomerId}
+          onChange={(e) => setSelectedCustomerId(e.target.value)}
+          style={{ padding: '0.5rem', width: '100%', maxWidth: '300px' }}
+        >
+          <option value="">-- Select Customer --</option>
+          {customers.map(c => (
+            <option key={c.customerId} value={c.customerId}>
+              {c.firstName} {c.lastName} ({c.phoneNumber})
+            </option>
+          ))}
+        </select>
+      </div>
 
       <div className="form-group" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
         <input
