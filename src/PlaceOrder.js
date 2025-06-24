@@ -259,7 +259,7 @@ useEffect(() => {
                   <th>Date Received</th>
                   <th>Quantity</th>
                   <th>Sale Price</th>
-                  <th>Item Discount</th>
+                  <th>Unit Discount</th>
                   <th>Subtotal</th>
                 </tr>
               </thead>

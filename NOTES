@@ -5,13 +5,19 @@ create salesman page
 Create Color -done
 Create Cpacity -done
 Create Supplier 
-Create Customer
-Create salesman
+Create Customer 
+Create salesman -done
 Create product - done
 Batch Add items - done
 Scan add barcode/IMEI/SN items - done
 transfer stock to salesman - done
-Place Order - done need to add per item discount
+Place Order - done 
 Cancel Order - done
-Return Order - done need to update per item disount return
+Return Order - done 
+
+fix one barcode multiple items bug:
+    {1-add barcode field to product if category is barcode identified 
+     2-check if barcode matches selected product in item details
+    } 
+
 create salesman mobile app

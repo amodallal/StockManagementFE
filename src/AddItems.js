@@ -253,7 +253,7 @@ const AddItemDetails = () => {
             </div>
             <div>
               <div className="form-group">
-                <label htmlFor="itemId">Item:</label>
+                <label htmlFor="itemId">Product:</label>
                 <select id="itemId" value={itemId} onChange={handleItemChange} disabled={!!itemId} required>
                   <option value="">Select Product to Start Scanning</option>
                   {(items || []).map((item) => (
