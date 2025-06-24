@@ -19,7 +19,7 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<AdminPage />} />
+        <Route path="/" element={<Login />} />
         <Route path="/AddProducts" element={<AddProducts />} />
         <Route path="/AddBrand" element={<AddBrand />} />
         <Route path="/AddEmployee" element={<AddEmployee  />} />
@@ -30,6 +30,8 @@ function App() {
         <Route path="/PlaceOrder" element={<PlaceOrder  />} />
         <Route path="/CancelOrder" element={<CancelOrder  />} />
         <Route path="/ReturnItems" element={<ReturnItems  />} />
+        <Route path="/AdminPage" element={<AdminPage  />} />
+        <Route path="/Login" element={<Login  />} />
       </Routes>
     </Router>
   );

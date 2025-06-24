@@ -101,7 +101,7 @@ const PlaceOrder = () => {
           if (existing) {
             existing.quantity += allocateQty;
           } else {
-            updatedOrderItems.push({ ...batch, quantity: allocateQty });
+            updatedOrderItems.push({ ...batch, quantity: allocateQty, discount: 0 });
           }
         }
 
@@ -123,6 +123,7 @@ const PlaceOrder = () => {
       }
 
       items.quantity = 1;
+      items.discount = 0;
       setOrderItems(prev => [items, ...prev]);
       setScannedCode('');
     } catch (err) {
@@ -138,14 +139,21 @@ const PlaceOrder = () => {
   };
 
   const placeOrder = async () => {
+    const employee = JSON.parse(localStorage.getItem('employee'));
+    if (!employee || !employee.employeeId) {
+      alert("You're not logged in.");
+      return;
+    }
+
     const payload = {
       customerId: 1,
       statusId: 13,
       orderDiscount: discount,
+      employeeId: employee.employeeId, // ✅ Pass logged-in employee
       items: orderItems.map(item => ({
         itemDetailsId: item.itemDetailsId,
         quantity: item.quantity,
-        discount: 0,
+        discount: item.discount || 0,
         salePrice: item.salePrice
       })),
     };
@@ -172,18 +180,18 @@ const PlaceOrder = () => {
     }
   };
 
-  const totalSalePrice = orderItems.reduce((sum, item) => sum + item.salePrice * item.quantity, 0);
-const discountedPrice = totalSalePrice - discount;
-const vat = discountedPrice * 0.11;
-const grandTotal = discountedPrice + vat;
-
+  const totalSalePrice = orderItems.reduce((sum, item) =>
+    sum + ((item.salePrice - (item.discount || 0)) * item.quantity), 0
+  );
+  const discountedPrice = totalSalePrice - discount;
+  const vat = discountedPrice * 0.11;
+  const grandTotal = discountedPrice + vat;
 
   return (
     <div className="container">
       <h2 className="title">Place Order</h2>
 
-      <div className="form-group">
-        <label htmlFor="scanner">Scan Code (IMEI / Serial / Barcode):</label>
+      <div className="form-group" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
         <input
           id="scanner"
           type="text"
@@ -192,48 +200,82 @@ const grandTotal = discountedPrice + vat;
           onKeyDown={handleKeyDown}
           ref={inputRef}
           placeholder="Scan or enter item code"
+          style={{ flex: '1', padding: '0.5rem', fontSize: '1rem' }}
           autoFocus
         />
-        <button onClick={handleScan}>Add Item</button>
+        <button
+          onClick={handleScan}
+          style={{ padding: '0.5rem 1rem', fontWeight: 'bold' }}
+        >
+          Add Item
+        </button>
       </div>
 
       {orderItems.length > 0 && (
-        <div className="added-items">
+        <div className="added-items" style={{ marginTop: '2rem' }}>
           <h3>Scanned Items</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Item Name</th>
-                <th>Identifier</th>
-                <th>Supplier</th>
-                <th>Date Received</th>
-                <th>Quantity</th>
-                <th>Sale Price</th>
-                <th>Cost</th>
-                <th>Subtotal</th>
-              </tr>
-            </thead>
-            <tbody>
-              {orderItems.map((item, i) => (
-                <tr key={i}>
-                  <td>{item.itemName || 'Unnamed'}</td>
-                  <td>{item.imei1 || item.serialNumber || item.barcode || '—'}</td>
-                  <td>{item.supplierName}</td>
-                  <td>{new Date(item.dateReceived).toLocaleDateString()}</td>
-                  <td>{item.quantity}</td>
-                  <td>${item.salePrice?.toFixed(2) ?? '0.00'}</td>
-                  <td>${item.cost?.toFixed(2) ?? '0.00'}</td>
-                  <td>${((item.salePrice ?? 0) * item.quantity).toFixed(2)}</td>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ background: '#f0f0f0' }}>
+                  <th>Item Name</th>
+                  <th>Identifier</th>
+                  <th>Supplier</th>
+                  <th>Date Received</th>
+                  <th>Quantity</th>
+                  <th>Sale Price</th>
+                  <th>Item Discount</th>
+                  <th>Subtotal</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {orderItems.map((item, i) => (
+                  <tr key={i}>
+                    <td>{item.itemName || 'Unnamed'}</td>
+                    <td>{item.imei1 || item.serialNumber || item.barcode || '—'}</td>
+                    <td>{item.supplierName}</td>
+                    <td>{new Date(item.dateReceived).toLocaleDateString()}</td>
+                    <td>{item.quantity}</td>
+                    <td>${item.salePrice?.toFixed(2) ?? '0.00'}</td>
+                    <td>
+                      <input
+                        type="number"
+                        value={item.discount ?? 0}
+                        min="0"
+                        max={item.salePrice}
+                        step="0.01"
+                        onChange={(e) => {
+                          const newDiscount = parseFloat(e.target.value) || 0;
+                          const updated = [...orderItems];
+                          updated[i].discount = newDiscount;
+                          setOrderItems(updated);
+                        }}
+                        style={{ width: '70px', padding: '2px 4px' }}
+                      />
+                    </td>
+                    <td>
+                      ${((item.salePrice - (item.discount || 0)) * item.quantity).toFixed(2)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-          <div className="total-summary" style={{ marginTop: '1rem', fontWeight: 'bold' }}>
+          <div
+            style={{
+              marginTop: '1.5rem',
+              fontWeight: 'bold',
+              fontSize: '1rem',
+              display: 'grid',
+              gap: '0.5rem',
+              maxWidth: '400px',
+            }}
+          >
             <div>Total Sale Price: ${totalSalePrice.toFixed(2)}</div>
             <div>VAT (11%): ${vat.toFixed(2)}</div>
             <div>
-              Discount: $
+              Order Discount: $
               <input
                 type="number"
                 value={discount}
@@ -248,21 +290,20 @@ const grandTotal = discountedPrice + vat;
                 style={{ width: '80px', marginLeft: '0.5rem' }}
               />
             </div>
-            <div style={{ marginTop: '0.5rem' }}>
-              Grand Total: ${grandTotal.toFixed(2)}
-            </div>
+            <div>Grand Total: ${grandTotal.toFixed(2)}</div>
           </div>
 
           <button
             onClick={placeOrder}
             style={{
-              marginTop: '1rem',
-              padding: '0.5rem 1rem',
+              marginTop: '1.5rem',
+              padding: '0.75rem 1.5rem',
               fontWeight: 'bold',
               backgroundColor: '#28a745',
               color: 'white',
               border: 'none',
-              borderRadius: '4px',
+              borderRadius: '6px',
+              fontSize: '1rem',
               cursor: 'pointer',
             }}
           >

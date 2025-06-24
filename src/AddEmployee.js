@@ -7,6 +7,8 @@ const AddEmployee = () => {
   const [lastName, setLastName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [roleId, setRoleId] = useState('');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [employees, setEmployees] = useState([]);
@@ -38,8 +40,8 @@ const AddEmployee = () => {
   }, []);
 
   const handleAddEmployee = async () => {
-    if (!firstName || !lastName || !phoneNumber || !roleId) {
-      alert('Please fill in all required fields before adding.');
+    if (!firstName || !lastName || !phoneNumber || !roleId || !username || !password) {
+      alert('Please fill in all required fields.');
       return;
     }
 
@@ -48,58 +50,48 @@ const AddEmployee = () => {
       lastName,
       phoneNumber,
       roleId,
-      isActive: true, // Default to active
+      isActive: true,
+      username,
+      password
     };
 
     try {
-      const response = await axios.post('http://localhost:5257/api/employees', newEmployee);
+      const response = await axios.post(
+        'http://localhost:5257/api/employees/create-with-login',
+        newEmployee
+      );
       setEmployees([...employees, response.data]);
       setFirstName('');
       setLastName('');
       setPhoneNumber('');
       setRoleId('');
+      setUsername('');
+      setPassword('');
     } catch (error) {
       console.error('Error adding employee:', error);
       alert('Failed to add employee.');
     }
   };
 
-  const getRoleName = (id) => {
-    const role = roles.find((r) => String(r.roleId) === String(id));
-    return role ? role.roleName : 'Unknown Role';
-  };
-
-  // Sort employees with Active first
-  const sortedEmployees = employees.sort((a, b) => {
-    if (a.isActive === b.isActive) return 0;
-    return a.isActive ? -1 : 1;
-  });
-
-  // Update employee status (isActive)
   const updateEmployeeStatus = async (employeeId, newStatus) => {
-        // Ask the user for confirmation before updating
-        const confirmMessage = newStatus ? 'Are you sure you want to activate this employee?' : 'Are you sure you want to deactivate this employee?';
-        const userConfirmed = window.confirm(confirmMessage);
-    
-        if (!userConfirmed) {
-          return; // Exit if the user cancels
-        }
-    // Ensure the newStatus is a boolean and log it
-    console.log('Updating status for employee:', employeeId, 'New Status:', newStatus);
-  
+    const confirmMessage = newStatus
+      ? 'Are you sure you want to activate this employee?'
+      : 'Are you sure you want to deactivate this employee?';
+    const userConfirmed = window.confirm(confirmMessage);
+
+    if (!userConfirmed) return;
+
     try {
-      const response = await axios.put(
-        `http://localhost:5257/api/employees/${employeeId}/status`, 
-        newStatus, // Send the boolean value directly
+      await axios.put(
+        `http://localhost:5257/api/employees/${employeeId}/status`,
+        newStatus,
         {
           headers: {
-            'Content-Type': 'application/json',  // Set Content-Type to JSON
-          }
+            'Content-Type': 'application/json',
+          },
         }
       );
-      console.log('API response:', response.data);
-  
-      // Update the employee status in the state after successful update
+
       setEmployees(
         employees.map((employee) =>
           employee.employeeId === employeeId
@@ -112,7 +104,34 @@ const AddEmployee = () => {
       alert('Failed to update employee status.');
     }
   };
-  
+
+  const handleResetPassword = async (employeeId) => {
+    const newPassword = window.prompt('Enter new password:');
+    if (!newPassword || newPassword.trim() === '') {
+      alert('Password reset canceled or invalid.');
+      return;
+    }
+
+    try {
+      await axios.put(
+        `http://localhost:5257/api/employees/${employeeId}/reset-password`,
+        { password: newPassword },
+        {
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+      alert('Password reset successful.');
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      alert('Failed to reset password.');
+    }
+  };
+
+  const sortedEmployees = employees.sort((a, b) => {
+    if (a.isActive === b.isActive) return 0;
+    return a.isActive ? -1 : 1;
+  });
+
   return (
     <div className="container">
       <h2 className="title">Add Employee</h2>
@@ -168,6 +187,26 @@ const AddEmployee = () => {
                 ))}
               </select>
             </div>
+            <div className="form-group">
+              <label htmlFor="username">Username:</label>
+              <input
+                type="text"
+                id="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="password">Password:</label>
+              <input
+                type="password"
+                id="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
             <div className="form-group full-width">
               <button
                 type="button"
@@ -202,19 +241,27 @@ const AddEmployee = () => {
                     <td>{employee.phoneNumber}</td>
                     <td>{employee.roleName}</td>
                     <td>
-                      <span 
+                      <span
                         className={`status ${employee.isActive ? 'active' : 'inactive'}`}
                       >
                         {employee.isActive ? 'Active' : 'Inactive'}
                       </span>
                     </td>
                     <td>
-                      <button 
-
-                        onClick={() => updateEmployeeStatus(employee.employeeId, !employee.isActive)}
+                      <button
+                        onClick={() =>
+                          updateEmployeeStatus(employee.employeeId, !employee.isActive)
+                        }
                         className="btn btn-success"
                       >
                         {employee.isActive ? 'Deactivate' : 'Activate'}
+                      </button>
+                      <button
+                        onClick={() => handleResetPassword(employee.employeeId)}
+                        className="btn btn-warning"
+                        style={{ marginLeft: '0.5rem' }}
+                      >
+                        Reset Password
                       </button>
                     </td>
                   </tr>

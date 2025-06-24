@@ -1,50 +1,56 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import './Login.css';  // Import the custom CSS file for styling
+import { useNavigate } from 'react-router-dom';
+import './styles.css';
 
-function Login() {
+const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
 
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    alert(`Username: ${username}, Password: ${password}`);
+  const handleLogin = async () => {
+    setError('');
+    try {
+      const response = await fetch('http://localhost:5257/api/employees/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        setError(data.message || 'Login failed');
+        return;
+      }
+
+      localStorage.setItem('employee', JSON.stringify(data));
+
+      // Redirect based on roleId
+     // Redirect based on roleId
+    if (data.roleId == 1) navigate('/AdminPage'); // Admin
+    else if (data.roleId == 7) navigate('/placeorder');
+    else navigate('/dashboard');
+    } catch (err) {
+      console.error('Login error:', err);
+      setError('Login request failed');
+    }
   };
 
   return (
-    <div className="login-container">
-      <div className="login-box">
-        <h2>Login</h2>
-        <form onSubmit={handleSubmit}>
-          <div className="input-group">
-            <label htmlFor="username">Username</label>
-            <input
-              type="text"
-              id="username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Enter your username"
-            />
-          </div>
-          <div className="input-group">
-            <label htmlFor="password">Password</label>
-            <input
-              type="password"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
-            />
-          </div>
-          <button type="submit">Login</button>
-        </form>
-
-        <div className="footer">
-          <Link to="/forgot-password">Forgot Password?</Link>
-        </div>
+    <div className="container">
+      <h2>Login</h2>
+      <div className="form-group">
+        <label>Username:</label>
+        <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} />
       </div>
+      <div className="form-group">
+        <label>Password:</label>
+        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+      </div>
+      {error && <p className="error">{error}</p>}
+      <button onClick={handleLogin}>Login</button>
     </div>
   );
-}
+};
 
 export default Login;
