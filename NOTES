@@ -15,9 +15,9 @@ Place Order - done
 Cancel Order - done
 Return Order - done 
 
-fix one barcode multiple items bug:
-    {1-add barcode field to product if category is barcode identified 
-     2-check if barcode matches selected product in item details
+fix one barcode multiple items bug: done
+    {1-add barcode field to product if category is barcode identified  done
+     2-check if barcode matches selected product in item details  done
     } 
 
 create salesman mobile app
