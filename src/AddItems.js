@@ -19,6 +19,7 @@ const AddItemDetails = () => {
   const [dateReceived, setDateReceived] = useState('');
   // New state for bulk quantity
   const [quantity, setQuantity] = useState(1);
+  const [lockedBarcode, setLockedBarcode] = useState('');
 
   // State for UI control and data
   const [items, setItems] = useState([]);
@@ -82,6 +83,10 @@ const AddItemDetails = () => {
   const handleItemChange = (e) => {
     const selectedItemId = e.target.value;
     const selectedItem = items.find((item) => String(item.itemId) === selectedItemId);
+
+    if (selectedItem.identifier?.toLowerCase() === 'barcode') {
+      setLockedBarcode(selectedItem.barcode || '');
+      }
 
     if (selectedItem) {
       if (!supplierId || !salePrice || !cost) {
@@ -175,7 +180,14 @@ const AddItemDetails = () => {
             alert('Please enter a valid quantity of at least 1.');
             isValid = false;
             quantityInputRef.current?.focus();
-        } else {
+            
+        } 
+            else if (barcode.trim() !== lockedBarcode.trim()) {
+    playBuzzer();
+    alert('Scanned barcode does not match the expected barcode!');
+    isValid = false;
+            }        
+        else {
           submissionData = { barcode };
         }
         barcodeInputRef.current?.focus();
@@ -269,6 +281,7 @@ const AddItemDetails = () => {
                 <label htmlFor="Description">Description</label>
                 <input type="text" id="Description" value={description} disabled />
               </div>
+
                <button type="button" onClick={handleReset} className="btn btn-success" >
                  Clear Form
                </button>
@@ -279,40 +292,94 @@ const AddItemDetails = () => {
           {/* --- Dynamic Input Section --- */}
           {identifier && (
             <div className="scan-section">
-                <h3>Scan Item ({identifier.toUpperCase()})</h3>
-                {/* Conditionally render the quantity input for barcode items */}
-                {identifier === 'barcode' && (
-                    <div className="form-group">
-                        <label htmlFor="quantity">Quantity:</label>
-                        <input
-                            type="number"
-                            id="quantity"
-                            value={quantity}
-                            onChange={(e) => setQuantity(e.target.value)}
-                            onKeyPress={handleKeyPress}
-                            ref={quantityInputRef}
-                            min="1"
-                            className="input-quantity" // Add a specific class for styling
-                        />
-                    </div>
-                )}
-              <div className="form-group">
-                <label htmlFor="serialNumber">Serial Number:</label>
-                <input type="text" id="serialNumber" value={serialNumber} onChange={(e) => setSerialNumber(e.target.value)} onKeyPress={handleKeyPress} ref={snInputRef} disabled={identifier !== 'sn'} placeholder={identifier !== 'sn' ? 'NA' : 'Enter Serial Number'}/>
-              </div>
-              <div className="form-group">
-                <label htmlFor="barcode">Barcode:</label>
-                <input type="text" id="barcode" value={barcode} onChange={(e) => setBarcode(e.target.value)} onKeyPress={handleKeyPress} ref={barcodeInputRef} disabled={identifier !== 'barcode'} placeholder={identifier !== 'barcode' ? 'NA' : 'Scan Barcode'}/>
-              </div>
-               <div className="form-group">
-                <label htmlFor="imei1">IMEI 1:</label>
-                <input type="text" id="imei1" value={imei1} onChange={(e) => setImei1(e.target.value)} onKeyPress={handleKeyPress} ref={imeiInputRef} disabled={identifier !== 'imei'} placeholder={identifier !== 'imei' ? 'NA' : 'Scan IMEI 1'}/>
-              </div>
-              <div className="form-group">
-                <label htmlFor="imei2">IMEI 2:</label>
-                <input type="text" id="imei2" value={imei2} onChange={(e) => setImei2(e.target.value)} onKeyPress={handleKeyPress} disabled={identifier !== 'imei'} placeholder={identifier !== 'imei' ? 'NA' : 'Enter/Scan IMEI 2 (Optional)'}/>
-              </div>
-            </div>
+  <h3>Scan Item ({identifier.toUpperCase()})</h3>
+
+  {/* Conditionally render barcode-only fields */}
+  {identifier === 'barcode' && (
+    <>
+      <div className="form-group">
+        <label htmlFor="lockedBarcode">Expected Barcode:</label>
+        <input
+          type="text"
+          id="lockedBarcode"
+          value={lockedBarcode}
+          disabled
+          className="locked-barcode"
+          placeholder="Expected barcode will appear here"
+        />
+      </div>
+      <div className="form-group">
+        <label htmlFor="quantity">Quantity:</label>
+        <input
+          type="number"
+          id="quantity"
+          value={quantity}
+          onChange={(e) => setQuantity(e.target.value)}
+          onKeyPress={handleKeyPress}
+          ref={quantityInputRef}
+          min="1"
+          className="input-quantity"
+        />
+      </div>
+    </>
+  )}
+
+  <div className="form-group">
+    <label htmlFor="serialNumber">Serial Number:</label>
+    <input
+      type="text"
+      id="serialNumber"
+      value={serialNumber}
+      onChange={(e) => setSerialNumber(e.target.value)}
+      onKeyPress={handleKeyPress}
+      ref={snInputRef}
+      disabled={identifier !== 'sn'}
+      placeholder={identifier !== 'sn' ? 'NA' : 'Enter Serial Number'}
+    />
+  </div>
+
+  <div className="form-group">
+    <label htmlFor="barcode">Barcode:</label>
+    <input
+      type="text"
+      id="barcode"
+      value={barcode}
+      onChange={(e) => setBarcode(e.target.value)}
+      onKeyPress={handleKeyPress}
+      ref={barcodeInputRef}
+      disabled={identifier !== 'barcode'}
+      placeholder={identifier !== 'barcode' ? 'NA' : 'Scan Barcode'}
+    />
+  </div>
+
+  <div className="form-group">
+    <label htmlFor="imei1">IMEI 1:</label>
+    <input
+      type="text"
+      id="imei1"
+      value={imei1}
+      onChange={(e) => setImei1(e.target.value)}
+      onKeyPress={handleKeyPress}
+      ref={imeiInputRef}
+      disabled={identifier !== 'imei'}
+      placeholder={identifier !== 'imei' ? 'NA' : 'Scan IMEI 1'}
+    />
+  </div>
+
+  <div className="form-group">
+    <label htmlFor="imei2">IMEI 2:</label>
+    <input
+      type="text"
+      id="imei2"
+      value={imei2}
+      onChange={(e) => setImei2(e.target.value)}
+      onKeyPress={handleKeyPress}
+      disabled={identifier !== 'imei'}
+      placeholder={identifier !== 'imei' ? 'NA' : 'Enter/Scan IMEI 2 (Optional)'}
+    />
+  </div>
+</div>
+
           )}
 
         {/* Display Grid of Added Items - Now includes quantity */}

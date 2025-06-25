@@ -25,15 +25,15 @@ const AddItem = () => {
   const [brandId, setBrandId] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [capacityId, setCapacityId] = useState([]);
-  const [supplierId, setSupplierId] = useState(""); // Supplier field
-  const [costPrice, setCostPrice] = useState(""); // Cost price
-  const [salePrice, setSalePrice] = useState(""); // Sale price
+  const [supplierId, setSupplierId] = useState("");
+  const [costPrice, setCostPrice] = useState("");
+  const [salePrice, setSalePrice] = useState("");
   const [brands, setBrands] = useState([]);
   const [colors, setcolors] = useState([]);
   const [colorId, setcolorId] = useState("");
   const [categories, setCategories] = useState([]);
   const [capacities, setCapacities] = useState([]);
-  const [suppliers, setSuppliers] = useState([]); // Supplier list
+  const [suppliers, setSuppliers] = useState([]);
   const [items, setItems] = useState([]);
   const [itemscapacities, setItemCapacities] = useState([]);
   const [itemssuppliers, setItemsSuppliers] = useState([]);
@@ -41,8 +41,10 @@ const AddItem = () => {
   const [error, setError] = useState(null);
   const [isFieldsLocked, setIsFieldsLocked] = useState(false);
   const [isImeiId, setIisImeiId] = useState(false);
-  //let isImeiId = false;
-  // Fetch initial data
+
+  const selectedCategory = categories.find((c) => c.categoryId.toString() === categoryId);
+  const isBarcodeCategory = selectedCategory?.identifier?.toLowerCase() === 'barcode';
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -72,7 +74,7 @@ const AddItem = () => {
         setCapacities(capacitiesData.capacities);
         setItemCapacities(itemscapacitiesData);
         setItemsSuppliers(itemssuppliersData);
-        setSuppliers(suppliersData.suppliers); // Set suppliers
+        setSuppliers(suppliersData.suppliers);
         setcolors(colorsData.colors);
         setLoading(false);
       } catch (err) {
@@ -83,23 +85,26 @@ const AddItem = () => {
     };
     fetchData();
   }, []);
+
   const handleAddItem = async () => {
     if (
       !name ||
       !modelNumber ||
       !brandId ||
       !categoryId ||
-    /*!supplierId ||
-      !costPrice ||
-      !salePrice ||*/
       !colorId ||
       (capacityId.length === 0 && !isFieldsLocked)
     ) {
       alert("Please fill in all required fields before adding.");
       return;
     }
+      if (selectedCategory.identifier == 'Barcode' && !barcode)
+      {
+          alert("barcode field is required for Barcode identified items");
+            return;
+      }
+
     try {
-      // Ensure model number is unique
       const response = await fetch_items();
       const existingItemInDB = response.items.find(
         (item) => item.modelNumber === modelNumber
@@ -108,9 +113,6 @@ const AddItem = () => {
         alert("This model number already exists. Please use a different one.");
         return;
       }
-     // if (categoryId === "3" || categoryId === "6") {
-      //  isImeiId = true;
-      //}
       const newItem = {
         name,
         modelNumber,
@@ -118,44 +120,33 @@ const AddItem = () => {
         barcode,
         brandId,
         categoryId,
-        isImeiId: ["3", "6"].includes(categoryId),//isImeiId,
+        //isImeiId: ["3", "6"].includes(categoryId),
         colorId,
       };
-      // Insert the item into the database
       await PostItem(newItem);
-      
-      // Fetch the newly created item 
       const itemsResponse = await axios.get(`${get_items_url}`);
-      console.log(itemsResponse);
       const createdItem = itemsResponse.data.find(
-      (item) => item.modelNumber === modelNumber
+        (item) => item.modelNumber === modelNumber
       );
       if (createdItem) {
-        // Add supplier, cost, and sale price to the joint table
         await axios.post(`${post_supplier_item}`, {
           itemId: createdItem.itemId,
-          supplierId : 1004 ,
-          costPrice : 0,  //disable adding cost and sale price to item_suppliers table
-          salePrice : 0,  //disable adding cost and sale price to item_suppliers table
+          supplierId: 1004,
+          costPrice: 0,
+          salePrice: 0,
         });
         if (!isFieldsLocked) {
-          // Add capacities if fields are not locked
           await axios.post(`${post_item_capacity}`, {
             ItemId: createdItem.itemId,
             CapacityIds: capacityId,
           });
-
         }
-        // Update capacities , suppliers ,cost and sale price
         const updatedItemscapacities = await fetch_itemscapacities();
         setItemCapacities(updatedItemscapacities);
-      
         const updatedItemsSuppliers = await fetch_supplier_item();
         setItemsSuppliers(updatedItemsSuppliers);
-        
       }
       setItems(itemsResponse.data);
-      // Reset fields
       setName("");
       setModelNumber("");
       setBarcode("");
@@ -167,16 +158,13 @@ const AddItem = () => {
       setCostPrice("0");
       setSalePrice("0");
       setDescription("");
-
-      
-      //setItemsSuppliers("");
       setIisImeiId(false);
-     // isImeiId = true;
     } catch (err) {
       console.error("Error adding item:", err);
       alert("Failed to add item.");
     }
   };
+
   const handleDeleteItem = async (itemId) => {
     if (window.confirm("Are you sure you want to delete this item?")) {
       await DeleteItem(itemId);
@@ -184,154 +172,86 @@ const AddItem = () => {
       setItems(response.items);
     }
   };
-  if (loading) {
-    return <p>Loading...</p>;
-  }
-  if (error) {
-    return <p className="error">{error}</p>;
-  }
+
+  if (loading) return <p>Loading...</p>;
+  if (error) return <p className="error">{error}</p>;
+
   return (
     <div className="container">
       <h2 className="title">Add Product</h2>
-
-      {/* Add Item Form */}
       <div className="form">
         <div className="form-group">
           <label htmlFor="name">Name:</label>
-          <input
-            type="text"
-            id="name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
+          <input type="text" id="name" value={name} onChange={(e) => setName(e.target.value)} />
         </div>
         <div className="form-group">
           <label htmlFor="modelNumber">Model Number:</label>
-          <input
-            type="text"
-            id="modelNumber"
-            value={modelNumber}
-            onChange={(e) => setModelNumber(e.target.value)}
-          />
+          <input type="text" id="modelNumber" value={modelNumber} onChange={(e) => setModelNumber(e.target.value)} />
         </div>
         <div className="form-group">
           <label htmlFor="description">Description:</label>
-          <input
-            type="text"
-            id="description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
+          <input type="text" id="description" value={description} onChange={(e) => setDescription(e.target.value)} />
         </div>
         <div className="form-group">
           <label htmlFor="brandId">Brand:</label>
-          <select
-            id="brandId"
-            value={brandId}
-            onChange={(e) => setBrandId(e.target.value)}
-          >
+          <select id="brandId" value={brandId} onChange={(e) => setBrandId(e.target.value)}>
             <option value="">Select a brand</option>
             {brands.map((brand) => (
-              <option key={brand.brandId} value={brand.brandId}>
-                {brand.brandName}
-              </option>
+              <option key={brand.brandId} value={brand.brandId}>{brand.brandName}</option>
             ))}
           </select>
         </div>
         <div className="form-group">
           <label htmlFor="categoryId">Category:</label>
-          <select
-            id="categoryId"
-            value={categoryId}
-            onChange={(e) => {
-              setCategoryId(e.target.value);
-             // setIsFieldsLocked(e.target.value === "5");// lock capacity field is Earphones category is selected
-            }}
-          >
+          <select id="categoryId" value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
             <option value="">Select a category</option>
             {categories.map((category) => (
-              <option key={category.categoryId} value={category.categoryId}>
-                {category.categoryName}
-              </option>
+              <option key={category.categoryId} value={category.categoryId}>{category.categoryName}</option>
             ))}
           </select>
         </div>
-        {/*<div className="form-group">
-          <label htmlFor="supplierId">Supplier:</label>
-          <select
-            id="supplierId"
-            value={supplierId}
-            onChange={(e) => setSupplierId(e.target.value)}
-          >
-            <option value="">Select a supplier</option>
-            {suppliers.map((supplier) => (
-              <option key={supplier.supplierId} value={supplier.supplierId}>
-                {supplier.supplierName}
-              </option>
-            ))}
-          </select>
-       */}
-        {/*<div className="form-group">
-         <label htmlFor="costPrice">Cost Price:</label>
-          <input
-            type="number"
-            id="costPrice"
-            value={costPrice}
-            onChange={(e) => setCostPrice(e.target.value)}
-          />
-        </div>
-        <div className="form-group">
-          <label htmlFor="salePrice">Sale Price:</label>
-          <input
-            type="number"
-            id="salePrice"
-            value={salePrice}
-            onChange={(e) => setSalePrice(e.target.value)}
-          />
-        </div> 
-        */}
+
+        {isBarcodeCategory && (
+          <div className="form-group">
+            <label htmlFor="barcode">Barcode:</label>
+            <input
+              type="text"
+              id="barcode"
+              value={barcode}
+              onChange={(e) => setBarcode(e.target.value)}
+              placeholder="Enter barcode"
+            />
+          </div>
+        )}
+
         <div className="form-group">
           <label htmlFor="capacities">Capacities:</label>
           <select
             id="capacityId"
             value={capacityId}
             disabled={isFieldsLocked}
-            onChange={(e) =>
-              setCapacityId(
-                Array.from(e.target.selectedOptions, (option) => option.value)
-              )
-            }
-            //multiple
+            onChange={(e) => setCapacityId(Array.from(e.target.selectedOptions, (option) => option.value))}
           >
             <option value="">Select capacity</option>
             {capacities.map((capacity) => (
-              <option key={capacity.capacityID} value={capacity.capacityID}>
-                {capacity.capacityName}
-              </option>
+              <option key={capacity.capacityID} value={capacity.capacityID}>{capacity.capacityName}</option>
             ))}
           </select>
         </div>
+
         <div className="form-group">
           <label htmlFor="colorId">Color:</label>
-          <select
-            id="colorId"
-            value={colorId}
-            onChange={(e) => setcolorId(e.target.value)}
-          >
+          <select id="colorId" value={colorId} onChange={(e) => setcolorId(e.target.value)}>
             <option value="">Select color</option>
             {colors.map((color) => (
-              <option key={color.colorId} value={color.colorId}>
-                {color.colorName}
-              </option>
+              <option key={color.colorId} value={color.colorId}>{color.colorName}</option>
             ))}
           </select>
-          </div>
+        </div>
 
-        <button className="btn btn-success" onClick={handleAddItem}>
-          Add
-        </button>
+        <button className="btn btn-success" onClick={handleAddItem}>Add</button>
       </div>
-      {/* Items Grid */}
+
       <h3 className="subtitle">Items List</h3>
       {items.length > 0 ? (
         <table className="table">
@@ -343,86 +263,36 @@ const AddItem = () => {
               <th>Color</th>
               <th>Brand</th>
               <th>Category</th>
-              {/*<th>Supplier</th>
-              <th>Cost Price</th> 
-              <th>Sale Price</th>*/}
               <th>Capacity</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-  {items.map((item) => {
-    // Get suppliers for the current item
-    const suppliersForItem = itemssuppliers.filter(
-      (supplierItem) => supplierItem.itemId == item.itemId
-    );
-    return (
-      <tr key={item.itemId}>
-        <td>{item.name}</td>
-        <td>{item.modelNumber}</td>
-        <td>{item.description}</td>
-        <td>{colors.find((c) => c.colorId == item.colorId)?.colorName}</td>
-        <td>{brands.find((b) => b.brandId == item.brandId)?.brandName}</td>
-        <td>
-          {categories.find((c) => c.categoryId == item.categoryId)?.categoryName}
-        </td>
-      {/*  <td>
-  {
-    itemssuppliers
-      .filter((itemSupplier) => itemSupplier.itemId === item.itemId) // Match the itemId
-      .map((itemSupplier, index) => {
-        const supplier = suppliers.find((supplier) => supplier.supplierId === itemSupplier.supplierId); // Find the corresponding supplier
-        return (
-          <div key={`${item.itemId}-${itemSupplier.supplierId}-${index}`}>
-            {supplier ? supplier.supplierName : 'Unknown'} 
-          </div>
-        );
-      })
-  }
-</td>
-<td>
-  {
-    itemssuppliers
-      .filter((supplierItem) => supplierItem.itemId === item.itemId)
-      .map((supplierItem, index) => (
-        <div key={`${supplierItem.itemId}-${supplierItem.supplierId}-${index}`}>
-          {supplierItem.costPrice || 'N/A'}
-        </div>
-      ))
-  }
-</td>
-<td>
-  {
-    itemssuppliers
-      .filter((supplierItem) => supplierItem.itemId === item.itemId)
-      .map((supplierItem, index) => (
-        <div key={`${supplierItem.itemId}-${supplierItem.supplierId}-${index}`}>
-          {supplierItem.salePrice || 'N/A'}
-        </div>
-      ))
-  }
-</td>*/}
-        <td>
-          {itemscapacities
-                    .filter((itemCapacity) => itemCapacity.itemId === item.itemId)
-                    .map((itemCapacity) => (
-                      <div key={`${itemCapacity.itemId}-${itemCapacity.capacityId}`}>
-                        {itemCapacity.capacityName || 'N/A'}
-                      </div>
-                    ))}
-                </td>
-        <td>
-          <button
-            className="btn btn-danger"
-            onClick={() => handleDeleteItem(item.itemId)}
-          >
-            Delete
-          </button>
-        </td>
-      </tr>
-    );
-  })}
-</tbody>
+            {items.map((item) => {
+              return (
+                <tr key={item.itemId}>
+                  <td>{item.name}</td>
+                  <td>{item.modelNumber}</td>
+                  <td>{item.description}</td>
+                  <td>{colors.find((c) => c.colorId == item.colorId)?.colorName}</td>
+                  <td>{brands.find((b) => b.brandId == item.brandId)?.brandName}</td>
+                  <td>{categories.find((c) => c.categoryId == item.categoryId)?.categoryName}</td>
+                  <td>
+                    {itemscapacities
+                      .filter((itemCapacity) => itemCapacity.itemId === item.itemId)
+                      .map((itemCapacity) => (
+                        <div key={`${itemCapacity.itemId}-${itemCapacity.capacityId}`}>
+                          {itemCapacity.capacityName || 'N/A'}
+                        </div>
+                      ))}
+                  </td>
+                  <td>
+                    <button className="btn btn-danger" onClick={() => handleDeleteItem(item.itemId)}>Delete</button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
         </table>
       ) : (
         <p>No items available.</p>
