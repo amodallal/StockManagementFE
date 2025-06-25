@@ -84,9 +84,9 @@ const AddItemDetails = () => {
     const selectedItemId = e.target.value;
     const selectedItem = items.find((item) => String(item.itemId) === selectedItemId);
 
-    if (selectedItem.identifier?.toLowerCase() === 'barcode') {
-      setLockedBarcode(selectedItem.barcode || '');
-      }
+    if (selectedItem?.identifier?.toLowerCase() === 'barcode') {
+        setLockedBarcode(selectedItem.barcode || '');
+    }
 
     if (selectedItem) {
       if (!supplierId || !salePrice || !cost) {
@@ -125,107 +125,143 @@ const AddItemDetails = () => {
       setQuantity(1);
   };
 
+  /**
+   * MODIFIED LOGIC:
+   * This function now checks if a barcode item already exists in the `addedItems` list.
+   * - If it exists, it updates the quantity of the existing item.
+   * - If it's a new item (or not a barcode item), it adds it to the list.
+   * This happens after a successful POST request to the server.
+   */
   const handleSubmit = async () => {
     if (!identifier) {
-      alert('Please select a valid item first.');
-      return;
+        alert('Please select a valid item first.');
+        return;
     }
 
     let submissionData = {};
     let isValid = true;
 
+    // --- Validation Logic ---
     switch (identifier) {
-      case 'imei':
-        if (!imei1 || imei1.length !== 15) {
-          playBuzzer();
-          alert('IMEI 1 must be exactly 15 digits.');
-          setImei1('');
-          isValid = false;
-        } else if (await checkIMEIExists(imei1)) {
-          playBuzzer();
-          alert('This IMEI already exists in the database!');
-          setImei1('');
-          setImei2('');
-          isValid = false;
-        } else {
-          submissionData = { imei1, imei2 };
-        }
-        imeiInputRef.current?.focus();
-        break;
+        case 'imei':
+            if (!imei1 || imei1.length !== 15) {
+                playBuzzer();
+                alert('IMEI 1 must be exactly 15 digits.');
+                setImei1('');
+                isValid = false;
+            } else if (await checkIMEIExists(imei1)) {
+                playBuzzer();
+                alert('This IMEI already exists in the database!');
+                setImei1('');
+                setImei2('');
+                isValid = false;
+            } else {
+                submissionData = { imei1, imei2 };
+            }
+            imeiInputRef.current?.focus();
+            break;
 
-      case 'sn':
-        if (!serialNumber.trim()) {
-          playBuzzer();
-          alert('Serial Number cannot be empty.');
-          isValid = false;
-         } else if (await checkSNExists(serialNumber)) {
-          playBuzzer();
-          alert('This serial number already exists in the database!');
-          setSerialNumber('');
-          isValid = false;
-        } else {
-          submissionData = { serialNumber };
-        }
-        snInputRef.current?.focus();
-        break;
+        case 'sn':
+            if (!serialNumber.trim()) {
+                playBuzzer();
+                alert('Serial Number cannot be empty.');
+                isValid = false;
+            } else if (await checkSNExists(serialNumber)) {
+                playBuzzer();
+                alert('This serial number already exists in the database!');
+                setSerialNumber('');
+                isValid = false;
+            } else {
+                submissionData = { serialNumber };
+            }
+            snInputRef.current?.focus();
+            break;
 
-      case 'barcode':
-        if (!barcode.trim()) {
-          playBuzzer();
-          alert('Barcode cannot be empty.');
-          isValid = false;
-        // Also validate the quantity for barcode items
-        } else if (isNaN(quantity) || Number(quantity) < 1) {
-            playBuzzer();
-            alert('Please enter a valid quantity of at least 1.');
+        case 'barcode':
+            if (!barcode.trim()) {
+                playBuzzer();
+                alert('Barcode cannot be empty.');
+                isValid = false;
+            } else if (isNaN(quantity) || Number(quantity) < 1) {
+                playBuzzer();
+                alert('Please enter a valid quantity of at least 1.');
+                isValid = false;
+                quantityInputRef.current?.focus();
+            } else if (barcode.trim() !== lockedBarcode.trim()) {
+                playBuzzer();
+                alert('Scanned barcode does not match the expected barcode!');
+                isValid = false;
+            } else {
+                submissionData = { barcode };
+            }
+            barcodeInputRef.current?.focus();
+            break;
+
+        default:
+            alert("The selected item does not have a valid identifier (SN, IMEI, barcode).");
             isValid = false;
-            quantityInputRef.current?.focus();
-            
-        } 
-            else if (barcode.trim() !== lockedBarcode.trim()) {
-    playBuzzer();
-    alert('Scanned barcode does not match the expected barcode!');
-    isValid = false;
-            }        
-        else {
-          submissionData = { barcode };
-        }
-        barcodeInputRef.current?.focus();
-        break;
-
-      default:
-        alert("The selected item does not have a valid identifier (SN, IMEI, barcode).");
-        isValid = false;
-        break;
+            break;
     }
 
     if (!isValid) return;
 
+    // Check if it's a barcode item that already exists in our `addedItems` list
+    const existingItemIndex =
+        identifier === 'barcode'
+            ? addedItems.findIndex(
+                (item) => item.barcode === barcode.trim() && String(item.itemId) === String(itemId)
+              )
+            : -1;
+
+    // Prepare the data payload for the API
     const newItemDetail = {
-      itemId,
-      supplierId,
-      salePrice,
-      cost,
-      // Use the state for quantity. It will be 1 unless changed for a barcode item.
-      quantity: String(quantity),
-      dateReceived,
-      ...submissionData,
+        itemId,
+        supplierId,
+        salePrice,
+        cost,
+        quantity: String(quantity), // The quantity being added in this transaction
+        dateReceived,
+        ...submissionData,
     };
 
     try {
-      await axios.post('http://localhost:5257/api/ItemDetails', newItemDetail);
-      const selectedItem = items.find((item) => String(item.itemId) === String(itemId));
-      setAddedItems((prev) => [{ itemName: selectedItem.name, ...newItemDetail }, ...prev]);
-      setSerialNumber('');
-      setImei1('');
-      setImei2('');
-      setBarcode('');
-      // Do not reset quantity here, so it can be reused for the next barcode scan
+        // Always POST to the backend. It's assumed the backend can handle
+        // adding stock to an existing item.
+        await axios.post('http://localhost:5257/api/ItemDetails', newItemDetail);
+
+        if (existingItemIndex !== -1) {
+            // If item exists, UPDATE its quantity in the local state for display
+            setAddedItems((prevItems) =>
+                prevItems.map((item, index) => {
+                    if (index === existingItemIndex) {
+                        const newQuantity = Number(item.quantity) + Number(quantity);
+                        return { ...item, quantity: String(newQuantity) };
+                    }
+                    return item;
+                })
+            );
+        } else {
+            // If it's a new item, ADD it to the local state for display
+            const selectedItem = items.find((item) => String(item.itemId) === String(itemId));
+            const displayItem = {
+                itemName: selectedItem.name,
+                ...newItemDetail,
+            };
+            setAddedItems((prev) => [displayItem, ...prev]);
+        }
+
+        // Clear relevant inputs for the next scan/entry
+        setSerialNumber('');
+        setImei1('');
+        setImei2('');
+        setBarcode('');
+
     } catch (error) {
-      console.error('Error adding item detail:', error);
-      alert('Failed to add item detail. Please try again.');
+        console.error('Error adding item detail:', error);
+        alert('Failed to add item detail. Please try again.');
     }
   };
+
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
@@ -282,9 +318,9 @@ const AddItemDetails = () => {
                 <input type="text" id="Description" value={description} disabled />
               </div>
 
-               <button type="button" onClick={handleReset} className="btn btn-success" >
-                 Clear Form
-               </button>
+              <button type="button" onClick={handleReset} className="btn btn-success" >
+                Clear Form
+              </button>
             </div>
           </div>
         </div>
@@ -325,20 +361,6 @@ const AddItemDetails = () => {
   )}
 
   <div className="form-group">
-    <label htmlFor="serialNumber">Serial Number:</label>
-    <input
-      type="text"
-      id="serialNumber"
-      value={serialNumber}
-      onChange={(e) => setSerialNumber(e.target.value)}
-      onKeyPress={handleKeyPress}
-      ref={snInputRef}
-      disabled={identifier !== 'sn'}
-      placeholder={identifier !== 'sn' ? 'NA' : 'Enter Serial Number'}
-    />
-  </div>
-
-  <div className="form-group">
     <label htmlFor="barcode">Barcode:</label>
     <input
       type="text"
@@ -349,6 +371,20 @@ const AddItemDetails = () => {
       ref={barcodeInputRef}
       disabled={identifier !== 'barcode'}
       placeholder={identifier !== 'barcode' ? 'NA' : 'Scan Barcode'}
+    />
+  </div>
+
+  <div className="form-group">
+    <label htmlFor="serialNumber">Serial Number:</label>
+    <input
+      type="text"
+      id="serialNumber"
+      value={serialNumber}
+      onChange={(e) => setSerialNumber(e.target.value)}
+      onKeyPress={handleKeyPress}
+      ref={snInputRef}
+      disabled={identifier !== 'sn'}
+      placeholder={identifier !== 'sn' ? 'NA' : 'Enter Serial Number'}
     />
   </div>
 
