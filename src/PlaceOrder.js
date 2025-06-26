@@ -1,4 +1,4 @@
-import React, { useState, useRef,useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   fetch_item_by_mn_imei,
   fetch_item_by_serial,
@@ -13,8 +13,7 @@ const PlaceOrder = () => {
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
   const inputRef = useRef();
 
-
-useEffect(() => {
+  useEffect(() => {
     const fetchCustomers = async () => {
       try {
         const res = await fetch('http://localhost:5257/api/customers');
@@ -27,7 +26,6 @@ useEffect(() => {
 
     fetchCustomers();
   }, []);
-
 
   const handleScan = async () => {
     const code = scannedCode.trim();
@@ -156,6 +154,13 @@ useEffect(() => {
     if (e.key === 'Enter') handleScan();
   };
 
+  const totalSalePrice = orderItems.reduce((sum, item) =>
+    sum + ((item.salePrice - (item.discount || 0)) * item.quantity), 0
+  );
+  const discountedPrice = totalSalePrice - discount;
+  const vat = discountedPrice * 0.11;
+  const grandTotal = discountedPrice + vat;
+
   const placeOrder = async () => {
     const employee = JSON.parse(localStorage.getItem('employee'));
     if (!employee || !employee.employeeId) {
@@ -167,7 +172,7 @@ useEffect(() => {
       customerId: parseInt(selectedCustomerId),
       statusId: 13,
       orderDiscount: discount,
-      employeeId: employee.employeeId, // ✅ Pass logged-in employee
+      employeeId: employee.employeeId,
       items: orderItems.map(item => ({
         itemDetailsId: item.itemDetailsId,
         quantity: item.quantity,
@@ -186,6 +191,65 @@ useEffect(() => {
       const result = await res.json();
       if (res.ok) {
         alert(`Order placed successfully! Order ID: ${result.orderId ?? 'N/A'}`);
+
+        const customer = customers.find(c => c.customerId == selectedCustomerId);
+
+        const invoiceHTML = `
+          <html>
+            <head>
+              <title>Invoice #${result.orderId}</title>
+              <style>
+                body { font-family: Arial; padding: 20px; }
+                h2 { text-align: center; }
+                table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+                th { background: #f0f0f0; }
+                .totals { margin-top: 20px; font-weight: bold; }
+              </style>
+            </head>
+            <body>
+              <h2>Invoice - Order #${result.orderId}</h2>
+              <p><strong>Customer:</strong> ${customer?.firstName} ${customer?.lastName}</p>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th>Identifier</th>
+                    <th>Qty</th>
+                    <th>Unit Price</th>
+                    <th>Discount</th>
+                    <th>Subtotal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${orderItems.map(item => `
+                    <tr>
+                      <td>${item.itemName}</td>
+                      <td>${item.imei1 || item.serialNumber || item.barcode || '-'}</td>
+                      <td>${item.quantity}</td>
+                      <td>$${item.salePrice.toFixed(2)}</td>
+                      <td>$${(item.discount || 0).toFixed(2)}</td>
+                      <td>$${((item.salePrice - (item.discount || 0)) * item.quantity).toFixed(2)}</td>
+                    </tr>`).join('')}
+                </tbody>
+              </table>
+              <div class="totals">
+                <p>Total: $${totalSalePrice.toFixed(2)}</p>
+                <p>Discount: $${discount.toFixed(2)}</p>
+                <p>VAT (11%): $${vat.toFixed(2)}</p>
+                <p>Grand Total: $${grandTotal.toFixed(2)}</p>
+              </div>
+              <script>window.onload = () => { window.print(); }</script>
+            </body>
+          </html>
+        `;
+
+        const win = window.open('', '_blank');
+        win.document.open();
+        win.document.write(invoiceHTML);
+        win.document.close();
+
+        // Reset state
         setOrderItems([]);
         setDiscount(0);
         setScannedCode('');
@@ -198,24 +262,14 @@ useEffect(() => {
     }
   };
 
-  const totalSalePrice = orderItems.reduce((sum, item) =>
-    sum + ((item.salePrice - (item.discount || 0)) * item.quantity), 0
-  );
-  const discountedPrice = totalSalePrice - discount;
-  const vat = discountedPrice * 0.11;
-  const grandTotal = discountedPrice + vat;
-
   return (
     <div className="container">
       <h2 className="title">Place Order</h2>
-
-
       <div className="form-group">
         <label>Select Customer:</label>
         <select
           value={selectedCustomerId}
           onChange={(e) => setSelectedCustomerId(e.target.value)}
-          style={{ padding: '0.5rem', width: '100%', maxWidth: '300px' }}
         >
           <option value="">-- Select Customer --</option>
           {customers.map(c => (
@@ -226,7 +280,7 @@ useEffect(() => {
         </select>
       </div>
 
-      <div className="form-group" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+      <div className="form-group" style={{ display: 'flex', gap: '1rem' }}>
         <input
           id="scanner"
           type="text"
@@ -235,113 +289,76 @@ useEffect(() => {
           onKeyDown={handleKeyDown}
           ref={inputRef}
           placeholder="Scan or enter item code"
-          style={{ flex: '1', padding: '0.5rem', fontSize: '1rem' }}
           autoFocus
         />
-        <button
-          onClick={handleScan}
-          style={{ padding: '0.5rem 1rem', fontWeight: 'bold' }}
-        >
-          Add Item
-        </button>
+        <button onClick={handleScan}>Add Item</button>
       </div>
 
       {orderItems.length > 0 && (
-        <div className="added-items" style={{ marginTop: '2rem' }}>
+        <div className="added-items">
           <h3>Scanned Items</h3>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ background: '#f0f0f0' }}>
-                  <th>Item Name</th>
-                  <th>Identifier</th>
-                  <th>Supplier</th>
-                  <th>Date Received</th>
-                  <th>Quantity</th>
-                  <th>Sale Price</th>
-                  <th>Unit Discount</th>
-                  <th>Subtotal</th>
+          <table>
+            <thead>
+              <tr>
+                <th>Item Name</th>
+                <th>Identifier</th>
+                <th>Supplier</th>
+                <th>Date Received</th>
+                <th>Qty</th>
+                <th>Price</th>
+                <th>Discount</th>
+                <th>Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              {orderItems.map((item, i) => (
+                <tr key={i}>
+                  <td>{item.itemName}</td>
+                  <td>{item.imei1 || item.serialNumber || item.barcode || '-'}</td>
+                  <td>{item.supplierName}</td>
+                  <td>{new Date(item.dateReceived).toLocaleDateString()}</td>
+                  <td>{item.quantity}</td>
+                  <td>${item.salePrice.toFixed(2)}</td>
+                  <td>
+                    <input
+                      type="number"
+                      value={item.discount ?? 0}
+                      min="0"
+                      max={item.salePrice}
+                      step="0.01"
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value) || 0;
+                        const updated = [...orderItems];
+                        updated[i].discount = val;
+                        setOrderItems(updated);
+                      }}
+                    />
+                  </td>
+                  <td>
+                    ${((item.salePrice - (item.discount || 0)) * item.quantity).toFixed(2)}
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {orderItems.map((item, i) => (
-                  <tr key={i}>
-                    <td>{item.itemName || 'Unnamed'}</td>
-                    <td>{item.imei1 || item.serialNumber || item.barcode || '—'}</td>
-                    <td>{item.supplierName}</td>
-                    <td>{new Date(item.dateReceived).toLocaleDateString()}</td>
-                    <td>{item.quantity}</td>
-                    <td>${item.salePrice?.toFixed(2) ?? '0.00'}</td>
-                    <td>
-                      <input
-                        type="number"
-                        value={item.discount ?? 0}
-                        min="0"
-                        max={item.salePrice}
-                        step="0.01"
-                        onChange={(e) => {
-                          const newDiscount = parseFloat(e.target.value) || 0;
-                          const updated = [...orderItems];
-                          updated[i].discount = newDiscount;
-                          setOrderItems(updated);
-                        }}
-                        style={{ width: '70px', padding: '2px 4px' }}
-                      />
-                    </td>
-                    <td>
-                      ${((item.salePrice - (item.discount || 0)) * item.quantity).toFixed(2)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </table>
 
-          <div
-            style={{
-              marginTop: '1.5rem',
-              fontWeight: 'bold',
-              fontSize: '1rem',
-              display: 'grid',
-              gap: '0.5rem',
-              maxWidth: '400px',
-            }}
-          >
-            <div>Total Sale Price: ${totalSalePrice.toFixed(2)}</div>
-            <div>VAT (11%): ${vat.toFixed(2)}</div>
-            <div>
+          <div style={{ marginTop: '1rem', fontWeight: 'bold' }}>
+            <p>Total Price: ${totalSalePrice.toFixed(2)}</p>
+            <p>VAT (11%): ${vat.toFixed(2)}</p>
+            <p>
               Order Discount: $
               <input
                 type="number"
                 value={discount}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setDiscount(val === '' ? '' : parseFloat(val) || 0);
-                }}
-                onFocus={(e) => {
-                  if (discount === 0) e.target.select();
-                }}
+                onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
                 placeholder="0"
-                style={{ width: '80px', marginLeft: '0.5rem' }}
+                style={{ width: '80px' }}
               />
-            </div>
-            <div>Grand Total: ${grandTotal.toFixed(2)}</div>
+            </p>
+            <p>Grand Total: ${grandTotal.toFixed(2)}</p>
           </div>
 
-          <button
-            onClick={placeOrder}
-            style={{
-              marginTop: '1.5rem',
-              padding: '0.75rem 1.5rem',
-              fontWeight: 'bold',
-              backgroundColor: '#28a745',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              fontSize: '1rem',
-              cursor: 'pointer',
-            }}
-          >
+          <button onClick={placeOrder} style={{ marginTop: '1rem' }}>
             Place Order
           </button>
         </div>

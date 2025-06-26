@@ -7,6 +7,8 @@
     "@zxing/library": "^0.21.3",
     "axios": "^1.7.9",
     "cra-template": "1.2.0",
+    "jspdf": "^3.0.1",
+    "jspdf-autotable": "^5.0.2",
     "papaparse": "^5.5.1",
     "quagga": "^0.12.1",
     "react": "^18.3.1",

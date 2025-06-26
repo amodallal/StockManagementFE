@@ -400,3 +400,9 @@ body {
   padding: 48px;
 }
 
+.added-items-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem; /* Add some space before the table */
+}
