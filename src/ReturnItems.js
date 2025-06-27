@@ -25,18 +25,18 @@ const ReturnItems = () => {
   };
 
   const handleChange = (id, field, value) => {
-  setReturnData((prev) => ({
-    ...prev,
-    [id]: {
-      ...(prev[id] || {}),
-      [field]: field === 'isDamaged'
-        ? value.target.checked
-        : typeof value === 'object'
-        ? value.target.value
-        : value,
-    },
-  }));
-};
+    setReturnData((prev) => ({
+      ...prev,
+      [id]: {
+        ...(prev[id] || {}),
+        [field]: field === 'isDamaged'
+          ? value.target.checked
+          : typeof value === 'object'
+          ? value.target.value
+          : value,
+      },
+    }));
+  };
 
   const handleSubmit = async () => {
     const items = Object.entries(returnData)
@@ -81,6 +81,13 @@ const ReturnItems = () => {
     }
   };
 
+  const getDisplayValue = (val) =>
+    typeof val === 'string' || typeof val === 'number'
+      ? val
+      : val === null || val === undefined
+      ? '—'
+      : JSON.stringify(val);
+
   return (
     <div className="container">
       <h2>Return Items</h2>
@@ -120,9 +127,16 @@ const ReturnItems = () => {
             <tbody>
               {orderedItems.map((item) => (
                 <tr key={item.itemDetailsId}>
-                  <td>{item.itemName || item.modelNumber || 'Unnamed'}</td>
-                  <td>{item.imei1 || item.serialNumber || item.barcode || '—'}</td>
-                  <td>{item.quantity}</td>
+                  <td>{getDisplayValue(item.itemName || item.modelNumber || 'Unnamed')}</td>
+                  <td>
+  {
+    typeof item.imei1 === 'string' && item.imei1.length > 0 ? item.imei1 :
+    typeof item.serialNumber === 'string' && item.serialNumber.length > 0 ? item.serialNumber :
+    typeof item.barcode === 'string' && item.barcode.length > 0 ? item.barcode :
+    '—'
+  }
+</td>
+                  <td>{getDisplayValue(item.quantity)}</td>
                   <td>
                     <input
                       type="number"
