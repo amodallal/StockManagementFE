@@ -369,7 +369,22 @@ export const fetch_itm_sup = async () => {
   }
 };
 
+  export const fetch_item_by_scanned_code = async (code) => {
+  try {
+    const res = await fetch(`http://localhost:5257/api/itemdetails/get-by-scanned-code/${code}`);
 
+    if (!res.ok) return null;
+
+    const items = await res.json();
+
+    if (!Array.isArray(items) || items.length === 0) return null;
+
+    return items;
+  } catch (err) {
+    console.error('API error:', err);
+    return null;
+  }
+};
 
   //Get item by IMEI
   export const fetch_item_by_mn_imei = async (imei1) => {
