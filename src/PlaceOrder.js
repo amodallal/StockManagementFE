@@ -216,7 +216,7 @@ const PlaceOrder = () => {
                     <th>Item</th>
                     <th>Identifier</th>
                     <th>Qty</th>
-                    <th>Unit Price</th>
+                    <th>Price</th>
                     <th>Discount</th>
                     <th>Subtotal</th>
                   </tr>
@@ -305,8 +305,8 @@ const PlaceOrder = () => {
                 <th>Supplier</th>
                 <th>Date Received</th>
                 <th>Qty</th>
-                <th>Price</th>
-                <th>Discount</th>
+                <th>Total Price</th>
+                <th>Unit Discount</th>
                 <th>Subtotal</th>
               </tr>
             </thead>
