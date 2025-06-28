@@ -23,3 +23,10 @@ fix one barcode multiple items bug: done
     } 
 
 create salesman mobile app
+Category - capacity
+remove product with items quantity = 0   in the last 6 month
+split storage and ram from capacity 
+search for supplier + dropdown
+search capacity
+discount permission + discount logs 
+scan item by item or bulk by updating a quantity field
