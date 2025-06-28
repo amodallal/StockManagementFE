@@ -200,6 +200,39 @@ export const fetch_supplier_item = async () => {
   }
 };
 
+
+//GetSpecsbyCategory
+
+export const fetchCategories = async () => {
+  try {
+    const res = await fetch("http://localhost:5001/api/categories");
+    if (!res.ok) {
+      throw new Error("Failed to fetch categories");
+    }
+    const data = await res.json();
+    return data;
+  } catch (error) {
+    console.error("Error fetching categories:", error);
+    return [];
+  }
+};
+
+export const fetchSpecsByCategory = async (categoryId) => {
+  try {
+    const res = await fetch(`http://localhost:5257/api/specs/GetByCategory?categoryId=${categoryId}`);
+    if (!res.ok) {
+      throw new Error("Failed to fetch specs");
+    }
+    const data = await res.json();
+    return data;
+  } catch (error) {
+    console.error("Error fetching specs:", error);
+    return [];
+  }
+};
+
+
+
   
 
 

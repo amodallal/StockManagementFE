@@ -1,8 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  fetch_item_by_mn_imei,
-  fetch_item_by_serial,
-  fetch_item_by_barcode,
   fetch_item_by_scanned_code,
 } from './Functions';
 
@@ -12,6 +9,7 @@ const PlaceOrder = () => {
   const [discount, setDiscount] = useState(0);
   const [customers, setCustomers] = useState([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
+  const [bulkEnabled, setBulkEnabled] = useState(false);
   const inputRef = useRef();
 
   useEffect(() => {
@@ -24,101 +22,114 @@ const PlaceOrder = () => {
         console.error('Failed to fetch customers:', err);
       }
     };
-
     fetchCustomers();
   }, []);
 
   const handleScan = async () => {
-  const code = scannedCode.trim();
-  if (!code) return;
+    const code = scannedCode.trim();
+    if (!code) return;
 
-  try {
-    const items = await fetch_item_by_scanned_code(code);
+    try {
+      const items = await fetch_item_by_scanned_code(code);
 
-    if (!items || items.length === 0) {
-      alert('This item does not exist in the database.');
-      return;
-    }
+      if (!items || items.length === 0) {
+        alert('This item does not exist in the database.');
+        setScannedCode(''); // ✅ clear input
 
-    const sorted = [...items].sort(
-      (a, b) => new Date(a.dateReceived) - new Date(b.dateReceived)
-    );
-
-    const totalStock = sorted.reduce((sum, item) => sum + item.quantity, 0);
-
-    if (totalStock <= 0) {
-      alert('Item is out of stock in the system.');
-      return;
-    }
-
-    const itemDetailIds = new Set(sorted.map((i) => i.itemDetailsId));
-    const existingQty = orderItems
-      .filter((x) => itemDetailIds.has(x.itemDetailsId))
-      .reduce((sum, x) => sum + x.quantity, 0);
-
-    const availableStock = totalStock - existingQty;
-
-    if (availableStock <= 0) {
-      alert('All available stock for this item has already been added to the current order.');
-      return;
-    }
-
-    const requestedQtyStr = prompt(
-      `Available stock: ${availableStock}\nEnter quantity to add:`,
-      '1'
-    );
-    const requestedQty = Number(requestedQtyStr);
-
-    if (
-      requestedQtyStr === null ||
-      requestedQtyStr.trim() === '' ||
-      isNaN(requestedQty) ||
-      requestedQty <= 0 ||
-      !Number.isInteger(requestedQty)
-    ) {
-      alert('Invalid quantity.');
-      return;
-    }
-
-    if (requestedQty > availableStock) {
-      const msg = `Only ${availableStock} available to add.` +
-        (existingQty > 0 ? ` You’ve already added ${existingQty}.` : '');
-      alert(msg);
-      return;
-    }
-
-    let qtyToAllocate = requestedQty;
-    const updatedOrderItems = [...orderItems];
-
-    for (const batch of sorted) {
-      if (qtyToAllocate <= 0) break;
-
-      const existing = updatedOrderItems.find(x => x.itemDetailsId === batch.itemDetailsId);
-      const alreadyQty = existing?.quantity || 0;
-      const availableQty = batch.quantity - alreadyQty;
-
-      if (availableQty <= 0) continue;
-
-      const allocateQty = Math.min(qtyToAllocate, availableQty);
-      qtyToAllocate -= allocateQty;
-
-      if (existing) {
-        existing.quantity += allocateQty;
-      } else {
-        updatedOrderItems.push({ ...batch, quantity: allocateQty, discount: 0 });
+        return;
       }
+
+      const sorted = [...items].sort(
+        (a, b) => new Date(a.dateReceived) - new Date(b.dateReceived)
+      );
+
+      const firstItem = sorted[0];
+      const identifier = firstItem.categoryIdentifier?.toLowerCase();
+
+      // For Imei or sn: only 1, no duplicates
+      if (identifier === 'imei' || identifier === 'sn') {
+        const alreadyAdded = orderItems.some(x => x.itemDetailsId === firstItem.itemDetailsId);
+        if (alreadyAdded) {
+          alert('This item has already been added to the current order.');
+          return;
+        }
+
+        setOrderItems([...orderItems, { ...firstItem, quantity: 1, discount: 0 }]);
+        setScannedCode('');
+        return;
+      }
+
+      // For barcode: default quantity = 1, or prompt if bulk is enabled
+      const totalStock = sorted.reduce((sum, item) => sum + item.quantity, 0);
+      if (totalStock <= 0) {
+        alert('Item is out of stock in the system.');
+        return;
+      }
+
+      const itemDetailIds = new Set(sorted.map((i) => i.itemDetailsId));
+      const existingQty = orderItems
+        .filter((x) => itemDetailIds.has(x.itemDetailsId))
+        .reduce((sum, x) => sum + x.quantity, 0);
+
+      const availableStock = totalStock - existingQty;
+      if (availableStock <= 0) {
+        alert('All available stock for this item has already been added to the current order.');
+        return;
+      }
+
+      let requestedQty = 1;
+
+      if (bulkEnabled) {
+        const requestedQtyStr = prompt(`Available stock: ${availableStock}\nEnter quantity to add:`, '1');
+        const qty = Number(requestedQtyStr);
+
+        if (
+          requestedQtyStr === null ||
+          requestedQtyStr.trim() === '' ||
+          isNaN(qty) ||
+          qty <= 0 ||
+          !Number.isInteger(qty)
+        ) {
+          alert('Invalid quantity. Defaulting to 1.');
+        } else if (qty > availableStock) {
+          alert(`Only ${availableStock} available to add.`);
+          return;
+        } else {
+          requestedQty = qty;
+        }
+      }
+
+      let qtyToAllocate = requestedQty;
+      const updatedOrderItems = [...orderItems];
+
+      for (const batch of sorted) {
+        if (qtyToAllocate <= 0) break;
+
+        const existing = updatedOrderItems.find(x => x.itemDetailsId === batch.itemDetailsId);
+        const alreadyQty = existing?.quantity || 0;
+        const batchAvailableQty = batch.quantity - alreadyQty;
+
+        if (batchAvailableQty <= 0) continue;
+
+        const allocateQty = Math.min(qtyToAllocate, batchAvailableQty);
+        qtyToAllocate -= allocateQty;
+
+        if (existing) {
+          existing.quantity += allocateQty;
+        } else {
+          updatedOrderItems.push({ ...batch, quantity: allocateQty, discount: 0 });
+        }
+      }
+
+      setOrderItems(updatedOrderItems);
+      setScannedCode('');
+    } catch (err) {
+      console.error('Error fetching scanned item:', err);
+      alert('Failed to scan item.');
+    } finally {
+      inputRef.current?.focus();
     }
-
-    setOrderItems(updatedOrderItems);
-    setScannedCode('');
-  } catch (err) {
-    console.error('Error fetching scanned item:', err);
-    alert('Failed to scan item.');
-  } finally {
-    inputRef.current?.focus();
-  }
-};
-
+  };
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') handleScan();
@@ -219,7 +230,6 @@ const PlaceOrder = () => {
         win.document.write(invoiceHTML);
         win.document.close();
 
-        // Reset state
         setOrderItems([]);
         setDiscount(0);
         setScannedCode('');
@@ -262,6 +272,17 @@ const PlaceOrder = () => {
           autoFocus
         />
         <button onClick={handleScan}>Add Item</button>
+      </div>
+
+      <div style={{ marginTop: '0.5rem' }}>
+        <label>
+          <input
+            type="checkbox"
+            checked={bulkEnabled}
+            onChange={(e) => setBulkEnabled(e.target.checked)}
+          />
+          Enable bulk quantity input
+        </label>
       </div>
 
       {orderItems.length > 0 && (
@@ -315,16 +336,18 @@ const PlaceOrder = () => {
           <div style={{ marginTop: '1rem', fontWeight: 'bold' }}>
             <p>Total Price: ${totalSalePrice.toFixed(2)}</p>
             <p>VAT (11%): ${vat.toFixed(2)}</p>
-            <p>
-              Order Discount: $
-              <input
-                type="number"
-                value={discount}
-                onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
-                placeholder="0"
-                style={{ width: '80px' }}
-              />
-            </p>
+         {/* 
+<p>
+  Order Discount: $
+  <input
+    type="number"
+    value={discount}
+    onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
+    placeholder="0"
+    style={{ width: '80px' }}
+  />
+</p> 
+*/}
             <p>Grand Total: ${grandTotal.toFixed(2)}</p>
           </div>
 

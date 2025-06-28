@@ -7,16 +7,14 @@ import {
   fetch_items,
   PostItem,
   DeleteItem,
-  fetch_capacities,
-  fetch_itemscapacities,
   fetch_suppliers,
   fetch_supplier_item,
   fetch_colors,
   get_items_url,
   post_supplier_item,
-  post_item_capacity,
-  fetch_item_by_mn,
+  fetchSpecsByCategory,
 } from "./Functions";
+
 const AddItem = () => {
   const [name, setName] = useState("");
   const [modelNumber, setModelNumber] = useState("");
@@ -24,7 +22,7 @@ const AddItem = () => {
   const [barcode, setBarcode] = useState("");
   const [brandId, setBrandId] = useState("");
   const [categoryId, setCategoryId] = useState("");
-  const [capacityId, setCapacityId] = useState([]);
+  const [specId, setSpecId] = useState("");
   const [supplierId, setSupplierId] = useState("");
   const [costPrice, setCostPrice] = useState("");
   const [salePrice, setSalePrice] = useState("");
@@ -32,10 +30,9 @@ const AddItem = () => {
   const [colors, setcolors] = useState([]);
   const [colorId, setcolorId] = useState("");
   const [categories, setCategories] = useState([]);
-  const [capacities, setCapacities] = useState([]);
+  const [specs, setSpecs] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
   const [items, setItems] = useState([]);
-  const [itemscapacities, setItemCapacities] = useState([]);
   const [itemssuppliers, setItemsSuppliers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -53,8 +50,6 @@ const AddItem = () => {
           brandsData,
           categoriesData,
           itemsData,
-          capacitiesData,
-          itemscapacitiesData,
           suppliersData,
           itemssuppliersData,
           colorsData,
@@ -62,8 +57,6 @@ const AddItem = () => {
           fetch_brands(),
           fetch_categories(),
           fetch_items(),
-          fetch_capacities(),
-          fetch_itemscapacities(),
           fetch_suppliers(),
           fetch_supplier_item(),
           fetch_colors(),
@@ -71,8 +64,6 @@ const AddItem = () => {
         setBrands(brandsData.brands);
         setCategories(categoriesData.categories);
         setItems(itemsData.items);
-        setCapacities(capacitiesData.capacities);
-        setItemCapacities(itemscapacitiesData);
         setItemsSuppliers(itemssuppliersData);
         setSuppliers(suppliersData.suppliers);
         setcolors(colorsData.colors);
@@ -86,6 +77,19 @@ const AddItem = () => {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    const fetchSpecs = async () => {
+      if (!categoryId) {
+        setSpecs([]);
+        return;
+      }
+      const data = await fetchSpecsByCategory(categoryId);
+      setSpecs(data);
+    };
+
+    fetchSpecs();
+  }, [categoryId]);
+
   const handleAddItem = async () => {
     if (
       !name ||
@@ -93,16 +97,15 @@ const AddItem = () => {
       !brandId ||
       !categoryId ||
       !colorId ||
-      (capacityId.length === 0 && !isFieldsLocked)
+      (!specId && !isFieldsLocked)
     ) {
       alert("Please fill in all required fields before adding.");
       return;
     }
-      if (selectedCategory.identifier == 'Barcode' && !barcode)
-      {
-          alert("barcode field is required for Barcode identified items");
-            return;
-      }
+    if (selectedCategory.identifier == 'Barcode' && !barcode) {
+      alert("barcode field is required for Barcode identified items");
+      return;
+    }
 
     try {
       const response = await fetch_items();
@@ -120,8 +123,8 @@ const AddItem = () => {
         barcode,
         brandId,
         categoryId,
-        //isImeiId: ["3", "6"].includes(categoryId),
         colorId,
+        specsId: specId, 
       };
       await PostItem(newItem);
       const itemsResponse = await axios.get(`${get_items_url}`);
@@ -135,14 +138,6 @@ const AddItem = () => {
           costPrice: 0,
           salePrice: 0,
         });
-        if (!isFieldsLocked) {
-          await axios.post(`${post_item_capacity}`, {
-            ItemId: createdItem.itemId,
-            CapacityIds: capacityId,
-          });
-        }
-        const updatedItemscapacities = await fetch_itemscapacities();
-        setItemCapacities(updatedItemscapacities);
         const updatedItemsSuppliers = await fetch_supplier_item();
         setItemsSuppliers(updatedItemsSuppliers);
       }
@@ -152,7 +147,7 @@ const AddItem = () => {
       setBarcode("");
       setBrandId("");
       setCategoryId("");
-      setCapacityId([]);
+      setSpecId("");
       setcolorId("");
       setSupplierId("");
       setCostPrice("0");
@@ -225,18 +220,38 @@ const AddItem = () => {
         )}
 
         <div className="form-group">
-          <label htmlFor="capacities">Capacities:</label>
+          <label htmlFor="specId">Specs:</label>
           <select
-            id="capacityId"
-            value={capacityId}
-            disabled={isFieldsLocked}
-            onChange={(e) => setCapacityId(Array.from(e.target.selectedOptions, (option) => option.value))}
-          >
-            <option value="">Select capacity</option>
-            {capacities.map((capacity) => (
-              <option key={capacity.capacityID} value={capacity.capacityID}>{capacity.capacityName}</option>
-            ))}
-          </select>
+  id="specId"
+  value={specId}
+  disabled={isFieldsLocked}
+  onChange={(e) => setSpecId(e.target.value)}
+>
+  <option value="">Select specs</option>
+  {specs
+    .filter(
+      (spec) =>
+        (spec.memory && spec.memory.trim() !== "") ||
+        (spec.storage && spec.storage.trim() !== "") ||
+        (spec.screenSize && spec.screenSize.trim() !== "") ||
+        (spec.power && spec.power.trim() !== "")
+    )
+    .map((spec) => {
+      const parts = [];
+      if (spec.memory && spec.memory.trim() !== "") parts.push(spec.memory);
+      if (spec.storage && spec.storage.trim() !== "") parts.push(spec.storage);
+      if (spec.screenSize && spec.screenSize.trim() !== "") parts.push(spec.screenSize);
+      if (spec.power && spec.power.trim() !== "") parts.push(spec.power); 
+
+      const displayText = parts.join(" / ");
+
+      return (
+        <option key={spec.id} value={spec.id}>
+          {displayText}
+        </option>
+      );
+    })}
+</select>
         </div>
 
         <div className="form-group">
@@ -263,7 +278,7 @@ const AddItem = () => {
               <th>Color</th>
               <th>Brand</th>
               <th>Category</th>
-              <th>Capacity</th>
+              <th>Specs</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -277,15 +292,7 @@ const AddItem = () => {
                   <td>{colors.find((c) => c.colorId == item.colorId)?.colorName}</td>
                   <td>{brands.find((b) => b.brandId == item.brandId)?.brandName}</td>
                   <td>{categories.find((c) => c.categoryId == item.categoryId)?.categoryName}</td>
-                  <td>
-                    {itemscapacities
-                      .filter((itemCapacity) => itemCapacity.itemId === item.itemId)
-                      .map((itemCapacity) => (
-                        <div key={`${itemCapacity.itemId}-${itemCapacity.capacityId}`}>
-                          {itemCapacity.capacityName || 'N/A'}
-                        </div>
-                      ))}
-                  </td>
+                  <td>{item.specId || 'N/A'}</td>
                   <td>
                     <button className="btn btn-danger" onClick={() => handleDeleteItem(item.itemId)}>Delete</button>
                   </td>
@@ -300,4 +307,5 @@ const AddItem = () => {
     </div>
   );
 };
+
 export default AddItem;
