@@ -25,8 +25,11 @@ fix one barcode multiple items bug: done
 create salesman mobile app
 do not show product with items quantity = 0   in the last 6 month
 split storage and ram from capacity done
-search for supplier + dropdown
-search capacity
+search for supplier + dropdown done
+add specs
+search specs
 discount permission + discount logs 
 scan item by item or bulk by updating a quantity field done
 add profit for each item
+same day , same price barcode items ???
+update items date received to date time 

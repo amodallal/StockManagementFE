@@ -406,3 +406,14 @@ body {
   align-items: center;
   margin-bottom: 1rem; /* Add some space before the table */
 }
+
+.search-result {
+  padding: 8px;
+  cursor: pointer; /* 👈 This is what changes the cursor to a hand */
+  border-bottom: 1px solid #eee;
+}
+
+.search-result:hover,
+.search-result.selected {
+  background-color: #d4f0ff;
+}

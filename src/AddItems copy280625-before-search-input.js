@@ -1,12 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import './styles.css';
+import { fetch_itm_sup } from './Functions';
 import { playBuzzer } from './Functions';
 import { checkIMEIExists } from './Functions';
 import { checkSNExists } from './Functions';
-import { fetchFilteredSuppliers, fetchFilteredProducts, postItemDetail } from './Functions';
-
-
 
 const AddItemDetails = () => {
   const [itemId, setItemId] = useState('');
@@ -28,8 +26,6 @@ const AddItemDetails = () => {
   const [identifier, setIdentifier] = useState(null);
   const [searchSupplier, setSearchSupplier] = useState('');
   const [searchProduct, setSearchProduct] = useState('');
-  const [supplierSelected, setSupplierSelected] = useState(false);
-  const [productSelected, setProductSelected] = useState(false);
 
   const snInputRef = useRef(null);
   const imeiInputRef = useRef(null);
@@ -39,72 +35,70 @@ const AddItemDetails = () => {
   useEffect(() => {
     const today = new Date().toISOString().split('T')[0];
     setDateReceived(today);
+
+    const fetchData = async () => {
+      try {
+        const { items, suppliers } = await fetch_itm_sup();
+        setItems(items || []);
+        setSuppliers(suppliers || []);
+      } catch (error) {
+        console.error('Error fetching initial data:', error);
+        alert('Could not fetch items and suppliers.');
+      }
+    };
+    fetchData();
   }, []);
 
+  useEffect(() => {
+    if (!identifier) return;
 
-
-const handleSupplierSearchChange = async (e) => {
-  const value = e.target.value;
-  setSearchSupplier(value);
-  setSupplierSelected(false);
-
-  if (value.trim().length >= 2) {
-    const data = await fetchFilteredSuppliers(value);
-    setSuppliers(data);
-  } else {
-    setSuppliers([]);
-  }
-};
-const handleProductSearchChange = async (e) => {
-  const value = e.target.value;
-  setSearchProduct(value);
-  setProductSelected(false);
-
-  if (value.trim().length >= 2) {
-    const data = await fetchFilteredProducts(value);
-    setItems(data);
-  } else {
-    setItems([]);
-  }
-};
-
-  const handleSupplierSelect = (supplier) => {
-    setSupplierId(supplier.supplierId);
-    setSearchSupplier(supplier.supplierName);
-    setSupplierSelected(true);
-    setSuppliers([]);
-  };
-
-  const handleItemSelect = (item) => {
-    if (!supplierId || !salePrice || !cost) {
-      alert('Please fill Supplier, Sale Price, and Cost before selecting an item.');
-      return;
-    }
-
-    setItemId(item.itemId);
-    setModelNumber(item.modelNumber || '');
-    setDescription(item.description || '');
-    setIdentifier(item.identifier?.toLowerCase() || null);
-    setProductSelected(true);
-    setItems([]);
-
-    if (item?.identifier?.toLowerCase() === 'barcode') {
-      setLockedBarcode(item.barcode || '');
-    } else {
-      setLockedBarcode('');
-    }
-
-    setSerialNumber('');
-    setImei1('');
-    setImei2('');
-    setBarcode('');
-    setQuantity(1);
-
-    setTimeout(() => {
-      if (item.identifier?.toLowerCase() === 'sn') snInputRef.current?.focus();
-      if (item.identifier?.toLowerCase() === 'imei') imeiInputRef.current?.focus();
-      if (item.identifier?.toLowerCase() === 'barcode') barcodeInputRef.current?.focus();
+    const focusTimeout = setTimeout(() => {
+      if (identifier === 'sn') snInputRef.current?.focus();
+      if (identifier === 'imei') imeiInputRef.current?.focus();
+      if (identifier === 'barcode') barcodeInputRef.current?.focus();
     }, 100);
+
+    return () => clearTimeout(focusTimeout);
+  }, [identifier]);
+
+  useEffect(() => {
+    const filtered = suppliers.filter((sup) =>
+      sup.supplierName.toLowerCase().includes(searchSupplier.toLowerCase())
+    );
+
+    if (searchSupplier.trim() !== '' && filtered.length > 0) {
+      setSupplierId(filtered[0].supplierId);
+    } else {
+      setSupplierId('');
+    }
+  }, [searchSupplier, suppliers]);
+
+  const handleItemChange = (e) => {
+    const selectedItemId = e.target.value;
+    const selectedItem = items.find((item) => String(item.itemId) === selectedItemId);
+
+    if (selectedItem?.identifier?.toLowerCase() === 'barcode') {
+      setLockedBarcode(selectedItem.barcode || '');
+    }
+
+    if (selectedItem) {
+      if (!supplierId || !salePrice || !cost) {
+        alert('Please fill Supplier, Sale Price, and Cost before selecting an item.');
+        e.target.value = '';
+        return;
+      }
+      setItemId(selectedItem.itemId);
+      setModelNumber(selectedItem.modelNumber || '');
+      setDescription(selectedItem.description || '');
+      setIdentifier(selectedItem.identifier?.toLowerCase() || null);
+      setSerialNumber('');
+      setImei1('');
+      setImei2('');
+      setBarcode('');
+      setQuantity(1);
+    } else {
+      handleReset();
+    }
   };
 
   const handleReset = () => {
@@ -123,16 +117,11 @@ const handleProductSearchChange = async (e) => {
     setQuantity(1);
     setSearchSupplier('');
     setSearchProduct('');
-    setSupplierSelected(false);
-    setProductSelected(false);
-    setLockedBarcode('');
-    setItems([]);
-    setSuppliers([]);
   };
 
   const handleSubmit = async () => {
     if (!identifier) {
-      alert('Please select a product first.');
+      alert('Please select a valid item first.');
       return;
     }
 
@@ -213,14 +202,33 @@ const handleProductSearchChange = async (e) => {
     };
 
     try {
-      await postItemDetail(newItemDetail);
+      await axios.post('http://localhost:5257/api/ItemDetails', newItemDetail);
 
-      const displayItem = {
-        itemName: searchProduct,
-        ...newItemDetail,
-      };
+      const existingItemIndex =
+        identifier === 'barcode'
+          ? addedItems.findIndex(
+              (item) => item.barcode === barcode.trim() && String(item.itemId) === String(itemId)
+            )
+          : -1;
 
-      setAddedItems((prev) => [displayItem, ...prev]);
+      if (existingItemIndex !== -1) {
+        setAddedItems((prevItems) =>
+          prevItems.map((item, index) => {
+            if (index === existingItemIndex) {
+              const newQty = Number(item.quantity) + Number(quantity);
+              return { ...item, quantity: String(newQty) };
+            }
+            return item;
+          })
+        );
+      } else {
+        const selectedItem = items.find((item) => String(item.itemId) === String(itemId));
+        const displayItem = {
+          itemName: selectedItem.name,
+          ...newItemDetail,
+        };
+        setAddedItems((prev) => [displayItem, ...prev]);
+      }
 
       setSerialNumber('');
       setImei1('');
@@ -239,7 +247,15 @@ const handleProductSearchChange = async (e) => {
     }
   };
 
-return (
+  const filteredSuppliers = suppliers.filter((sup) =>
+    sup.supplierName.toLowerCase().includes(searchSupplier.toLowerCase())
+  );
+
+  const filteredItems = items.filter((item) =>
+    item.name.toLowerCase().includes(searchProduct.toLowerCase())
+  );
+
+  return (
     <div className="container">
       <h2 className="title">Add Items</h2>
       <div className="form">
@@ -251,24 +267,26 @@ return (
                 type="text"
                 id="searchSupplier"
                 value={searchSupplier}
-                onChange={handleSupplierSearchChange}
-                autoComplete="off"
+                onChange={(e) => setSearchSupplier(e.target.value)}
               />
-              {suppliers.length > 0 && !supplierSelected && (
-                <div className="search-results">
-                  {suppliers.map((supplier) => (
-                    <div
-                      key={supplier.supplierId}
-                      className="search-result"
-                      onClick={() => handleSupplierSelect(supplier)}
-                    >
-                      {supplier.supplierName}
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
-
+            <div className="form-group">
+              <label htmlFor="supplierId">Supplier:</label>
+              <select
+                id="supplierId"
+                value={supplierId}
+                onChange={(e) => setSupplierId(e.target.value)}
+                disabled={!!itemId}
+                required
+              >
+                <option value="">Select Supplier</option>
+                {filteredSuppliers.map((supplier) => (
+                  <option key={supplier.supplierId} value={supplier.supplierId}>
+                    {supplier.supplierName}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div className="form-group">
               <label htmlFor="salePrice">Sale Price:</label>
               <input
@@ -276,7 +294,7 @@ return (
                 id="salePrice"
                 value={salePrice}
                 onChange={(e) => setSalePrice(e.target.value)}
-                autoComplete="off"
+                disabled={!!itemId}
               />
             </div>
             <div className="form-group">
@@ -286,7 +304,7 @@ return (
                 id="cost"
                 value={cost}
                 onChange={(e) => setCost(e.target.value)}
-                autoComplete="off"
+                disabled={!!itemId}
               />
             </div>
             <div className="form-group">
@@ -296,12 +314,11 @@ return (
                 id="dateReceived"
                 value={dateReceived}
                 onChange={(e) => setDateReceived(e.target.value)}
+                disabled={!!itemId}
                 required
-                autoComplete="off"
               />
             </div>
           </div>
-
           <div>
             <div className="form-group">
               <label htmlFor="searchProduct">Search Product:</label>
@@ -309,31 +326,33 @@ return (
                 type="text"
                 id="searchProduct"
                 value={searchProduct}
-                onChange={handleProductSearchChange}
-                autoComplete="off"
+                onChange={(e) => setSearchProduct(e.target.value)}
               />
-              {items.length > 0 && !productSelected && (
-                <div className="search-results">
-                  {items.map((item) => (
-                    <div
-                      key={item.itemId}
-                      className="search-result"
-                      onClick={() => handleItemSelect(item)}
-                    >
-                      {item.name}
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
-
+            <div className="form-group">
+              <label htmlFor="itemId">Product:</label>
+              <select
+                id="itemId"
+                value={itemId}
+                onChange={handleItemChange}
+                disabled={!!itemId}
+                required
+              >
+                <option value="">Select Product to Start Scanning</option>
+                {filteredItems.map((item) => (
+                  <option key={item.itemId} value={item.itemId}>
+                    {item.name}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div className="form-group">
               <label htmlFor="ModelNumber">Model Number</label>
-              <input type="text" id="ModelNumber" value={modelNumber} disabled autoComplete="off" />
+              <input type="text" id="ModelNumber" value={modelNumber} disabled />
             </div>
             <div className="form-group">
               <label htmlFor="Description">Description</label>
-              <input type="text" id="Description" value={description} disabled autoComplete="off" />
+              <input type="text" id="Description" value={description} disabled />
             </div>
             <button type="button" onClick={handleReset} className="btn btn-success">
               Clear Form
@@ -342,6 +361,7 @@ return (
         </div>
       </div>
 
+      {/* Dynamic scan section */}
       {identifier && (
         <div className="scan-section">
           <h3>Scan Item ({identifier.toUpperCase()})</h3>
@@ -355,7 +375,6 @@ return (
                   value={lockedBarcode}
                   disabled
                   className="locked-barcode"
-                  autoComplete="off"
                 />
               </div>
               <div className="form-group">
@@ -368,7 +387,6 @@ return (
                   onKeyPress={handleKeyPress}
                   ref={quantityInputRef}
                   min="1"
-                  autoComplete="off"
                 />
               </div>
             </>
@@ -384,7 +402,6 @@ return (
               ref={barcodeInputRef}
               disabled={identifier !== 'barcode'}
               placeholder={identifier !== 'barcode' ? 'NA' : 'Scan Barcode'}
-              autoComplete="off"
             />
           </div>
           <div className="form-group">
@@ -398,7 +415,6 @@ return (
               ref={snInputRef}
               disabled={identifier !== 'sn'}
               placeholder={identifier !== 'sn' ? 'NA' : 'Enter Serial Number'}
-              autoComplete="off"
             />
           </div>
           <div className="form-group">
@@ -412,7 +428,6 @@ return (
               ref={imeiInputRef}
               disabled={identifier !== 'imei'}
               placeholder={identifier !== 'imei' ? 'NA' : 'Scan IMEI 1'}
-              autoComplete="off"
             />
           </div>
           <div className="form-group">
@@ -425,7 +440,6 @@ return (
               onKeyPress={handleKeyPress}
               disabled={identifier !== 'imei'}
               placeholder={identifier !== 'imei' ? 'NA' : 'Enter/Scan IMEI 2 (Optional)'}
-              autoComplete="off"
             />
           </div>
         </div>

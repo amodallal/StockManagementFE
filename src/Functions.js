@@ -231,10 +231,35 @@ export const fetchSpecsByCategory = async (categoryId) => {
   }
 };
 
-
-
+//Get filtered suppliers 
+export const fetchFilteredSuppliers = async (query) => {
+  try {
+    const res = await fetch(`http://localhost:5257/api/Supplier/GetFilteredSuppliers?search=${query}`);
+    if (!res.ok) {
+      throw new Error("Failed to fetch suppliers");
+    }
+    const data = await res.json();
+    return data;
+  } catch (error) {
+    console.error("Error fetching suppliers:", error);
+    return [];
+  }
+};
   
-
+//Get filtered products 
+export const fetchFilteredProducts = async (query) => {
+  try {
+    const res = await fetch(`http://localhost:5257/api/Items/GetFilteredItems?search=${query}`);
+    if (!res.ok) {
+      throw new Error("Failed to fetch products");
+    }
+    const data = await res.json();
+    return data;
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    return [];
+  }
+};
 
  //Get Categories
  export const fetch_categories = async () => {
@@ -383,6 +408,29 @@ export const fetch_itm_sup = async () => {
     return false;
   }
 };
+  // Post new Item 
+export const postItemDetail = async (itemDetail) => {
+  try {
+    const res = await fetch('http://localhost:5257/api/ItemDetails', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(itemDetail),
+    });
+
+    if (!res.ok) {
+      throw new Error("Failed to add item detail");
+    }
+
+    const data = await res.json();
+    return data;
+  } catch (error) {
+    console.error("Error posting item detail:", error);
+    throw error;
+  }
+};
+
 
   //Check if IMEI exists in the database
  export const checkSNExists = async (SN) => {

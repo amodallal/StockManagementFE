@@ -11,7 +11,7 @@ import {
   fetch_supplier_item,
   fetch_colors,
   get_items_url,
-  post_supplier_item,
+  //post_supplier_item,
   fetchSpecsByCategory,
 } from "./Functions";
 
@@ -131,7 +131,7 @@ const AddItem = () => {
       const createdItem = itemsResponse.data.find(
         (item) => item.modelNumber === modelNumber
       );
-      if (createdItem) {
+      /*if (createdItem) {
         await axios.post(`${post_supplier_item}`, {
           itemId: createdItem.itemId,
           supplierId: 1004,
@@ -140,7 +140,7 @@ const AddItem = () => {
         });
         const updatedItemsSuppliers = await fetch_supplier_item();
         setItemsSuppliers(updatedItemsSuppliers);
-      }
+      }*/
       setItems(itemsResponse.data);
       setName("");
       setModelNumber("");
