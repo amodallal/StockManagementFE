@@ -7,7 +7,7 @@ import { fetch_itm_sup , fetch_items,fetch_supplier_item} from './Functions';
 import { playBuzzer} from './Functions';
 import {checkIMEIExists } from './Functions';
 
-
+//before pagination
 
 const AddItemDetails = () => {
   const [itemId, setItemId] = useState('');

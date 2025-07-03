@@ -32,4 +32,5 @@ discount permission + discount logs
 scan item by item or bulk by updating a quantity field done
 add profit for each item
 same day , same price barcode items ???
-update items date received to date time 
+check if barcode exists in add item before adding 
+check if model number exists before adding
