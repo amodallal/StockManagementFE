@@ -262,7 +262,7 @@ const AddItem = () => {
                   <td>{brands.find((b) => b.brandId == item.brandId)?.brandName || 'N/A'}</td>
                   <td>{categories.find((c) => c.categoryId == item.categoryId)?.categoryName || 'N/A'}</td>
                   {/* ✅ FIX 2: Use the helper function to find and format the spec text. */}
-                  <td>{formatSpecText(specs.find(s => s.id == item.specsId))}</td>
+                  <td>{item.spec ? formatSpecText(item.spec) : 'N/A'}</td>
                   <td>
                     <button className="btn btn-danger" onClick={() => handleDeleteItem(item.itemId)}>Delete</button>
                   </td>
