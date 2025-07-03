@@ -76,36 +76,42 @@ const handleProductSearchChange = async (e) => {
   };
 
   const handleItemSelect = (item) => {
-    if (!supplierId || !salePrice || !cost) {
-      alert('Please fill Supplier, Sale Price, and Cost before selecting an item.');
-      return;
-    }
+  if (!supplierId || !salePrice || !cost) {
+    alert('Please fill Supplier, Sale Price, and Cost before selecting an item.');
+    return;
+  }
 
-    setItemId(item.itemId);
-    setModelNumber(item.modelNumber || '');
-    setDescription(item.description || '');
-    setIdentifier(item.identifier?.toLowerCase() || null);
-    setProductSelected(true);
-    setItems([]);
+  setItemId(item.itemId);
+  setModelNumber(item.modelNumber || '');
+  setDescription(item.description || '');
+  setIdentifier(item.identifier?.toLowerCase() || null);
 
-    if (item?.identifier?.toLowerCase() === 'barcode') {
-      setLockedBarcode(item.barcode || '');
-    } else {
-      setLockedBarcode('');
-    }
+  // ✅ Set the searchProduct first
+  setSearchProduct(item.name);
 
-    setSerialNumber('');
-    setImei1('');
-    setImei2('');
-    setBarcode('');
-    setQuantity(1);
+  // ✅ Then lock
+  setProductSelected(true);
 
-    setTimeout(() => {
-      if (item.identifier?.toLowerCase() === 'sn') snInputRef.current?.focus();
-      if (item.identifier?.toLowerCase() === 'imei') imeiInputRef.current?.focus();
-      if (item.identifier?.toLowerCase() === 'barcode') barcodeInputRef.current?.focus();
-    }, 100);
-  };
+  setItems([]);
+
+  if (item?.identifier?.toLowerCase() === 'barcode') {
+    setLockedBarcode(item.barcode || '');
+  } else {
+    setLockedBarcode('');
+  }
+
+  setSerialNumber('');
+  setImei1('');
+  setImei2('');
+  setBarcode('');
+  setQuantity(1);
+
+  setTimeout(() => {
+    if (item.identifier?.toLowerCase() === 'sn') snInputRef.current?.focus();
+    if (item.identifier?.toLowerCase() === 'imei') imeiInputRef.current?.focus();
+    if (item.identifier?.toLowerCase() === 'barcode') barcodeInputRef.current?.focus();
+  }, 100);
+};
 
   const handleReset = () => {
     setItemId('');
@@ -311,6 +317,7 @@ return (
                 value={searchProduct}
                 onChange={handleProductSearchChange}
                 autoComplete="off"
+                disabled={productSelected}
               />
               {items.length > 0 && !productSelected && (
                 <div className="search-results">

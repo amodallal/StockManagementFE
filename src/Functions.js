@@ -47,9 +47,16 @@ export const fetch_statuses = async () => {
   }
 };
  
-export const fetch_items_pagination = async (pageNumber = 1, pageSize = 10) => {
+export const fetch_items_pagination = async (pageNumber = 1, pageSize = 10, sortBy = "ItemId", isDesc = true) => {
   try {
-    const res = await axios.get(`http://localhost:5257/api/items/GetItemspagination?pageNumber=${pageNumber}&pageSize=${pageSize}`);
+    const res = await axios.get(`http://localhost:5257/api/items/GetItemspagination`, {
+      params: {
+        pageNumber: pageNumber,
+        pageSize: pageSize,
+        sortBy: sortBy,
+        isDesc: isDesc
+      }
+    });
     return res.data;
   } catch (error) {
     console.error("Error fetching paginated items:", error);

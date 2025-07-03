@@ -91,7 +91,19 @@ const AddItem = () => {
     fetchSpecs();
   }, [categoryId]);
 
-  const fetchPagedItems = async (page = 1, size = 10) => {
+ const fetchPagedItems = async (page = 1, size = 10) => {
+    try {
+      const res = await fetch_items_pagination(1, 10, "Name", false);
+      setItems(res.items);
+      setTotalPages(res.totalPages);
+    } catch (error) {
+      console.error("Error fetching paged items:", error);
+    }
+  };
+
+
+  // Unsorted pagination
+ /* const fetchPagedItems = async (page = 1, size = 10) => {
     try {
       const res = await fetch_items_pagination(page, size);
       setItems(res.items);
@@ -99,7 +111,7 @@ const AddItem = () => {
     } catch (error) {
       console.error("Error fetching paged items:", error);
     }
-  };
+  };*/
 
   const handleAddItem = async () => {
     // --- handleAddItem logic remains the same ---

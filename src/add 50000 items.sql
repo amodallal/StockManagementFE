@@ -6,7 +6,7 @@ DECLARE @categoryId INT;
 DECLARE @colorId INT;
 DECLARE @desc NVARCHAR(255);
 DECLARE @barcode NVARCHAR(50);
-DECLARE @categoryForBarcode INT;
+DECLARE @specsId INT;
 
 WHILE @i <= 100000
 BEGIN
@@ -58,9 +58,12 @@ BEGIN
     ELSE
         SET @barcode = NULL;
 
+    -- Generate random specsId between 1 and 9
+    SET @specsId = ABS(CHECKSUM(NEWID())) % 8 + 1;
+
     -- Insert
     INSERT INTO items (Name, model_number, brand_id, category_id, Description, ColorId, Barcode, SpecsId)
-    VALUES (@name, @model, @brandId, @categoryId, @desc, @colorId, @barcode, NULL);
+    VALUES (@name, @model, @brandId, @categoryId, @desc, @colorId, @barcode, @specsId);
 
     SET @i = @i + 1;
 END;
