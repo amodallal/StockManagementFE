@@ -107,13 +107,20 @@ export const fetch_item_by_mn = async (modelNumber) => {
 // Post Items
 export const PostItem = async (item) => {
   try {
-    await axios.post(`${post_items_url}`, item);
-    alert('Items submitted successfully!');
-    return true;
+    // 1. Capture the full response from the server
+    const response = await axios.post(`${post_items_url}`, item);
+    
+    // 2. Display success message
+    alert('Item submitted successfully!');
+    
+    // 3. CRITICAL: Return the data from the response, not just 'true'
+    return response.data; 
     
   } catch (error) {
-    console.error('Error submitting items:', error);
-    alert('Failed to submit items.');
+    console.error('Error submitting item:', error);
+    alert('Failed to submit item.');
+    // It's good practice to re-throw the error so the calling function knows something went wrong
+    throw error; 
   }
 };
 

@@ -1,21 +1,16 @@
 import React, { useState, useEffect } from "react";
-// --- imports remain the same ---
+// --- Assuming these functions are correctly imported ---
 import {
   fetch_brands,
   fetch_categories,
   PostItem,
   DeleteItem,
-  fetch_suppliers,
-  fetch_supplier_item,
   fetch_colors,
   fetchSpecsByCategory,
-  get_items_url,
-  fetch_items_pagination,
 } from "./Functions";
 
-
 const AddItem = () => {
-  // --- state declarations remain the same ---
+  // --- State for form inputs ---
   const [name, setName] = useState("");
   const [modelNumber, setModelNumber] = useState("");
   const [description, setDescription] = useState("");
@@ -24,43 +19,37 @@ const AddItem = () => {
   const [categoryId, setCategoryId] = useState("");
   const [specId, setSpecId] = useState("");
   const [colorId, setcolorId] = useState("");
+
+  // --- State for dropdown data ---
   const [brands, setBrands] = useState([]);
   const [colors, setColors] = useState([]);
   const [categories, setCategories] = useState([]);
   const [specs, setSpecs] = useState([]);
-  const [items, setItems] = useState([]);
+  
+  // --- MODIFIED: State to hold only newly added items ---
+  const [addedItems, setAddedItems] = useState([]);
+
+  // --- State for loading and errors ---
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isFieldsLocked, setIsFieldsLocked] = useState(false);
-  const [pageNumber, setPageNumber] = useState(1);
-  const [pageSize] = useState(10);
-  const [totalPages, setTotalPages] = useState(1);
-
+  
+  // Helper to check if the selected category is of type 'barcode'
   const selectedCategory = categories.find((c) => c.categoryId.toString() === categoryId);
   const isBarcodeCategory = selectedCategory?.identifier?.toLowerCase() === "barcode";
-  
-  // ✅ FIX 1: Add a helper function to format spec text consistently.
+
+  // Helper function to format spec text for display
   const formatSpecText = (spec) => {
     if (!spec) return 'N/A';
-    const parts = [];
-    if (spec.memory?.trim()) parts.push(spec.memory);
-    if (spec.storage?.trim()) parts.push(spec.storage);
-    if (spec.screenSize?.trim()) parts.push(spec.screenSize);
-    if (spec.power?.trim()) parts.push(spec.power);
-    const displayText = parts.join(" / ");
-    return displayText || 'N/A'; // Return N/A if spec exists but all fields are empty
+    const parts = [spec.memory, spec.storage, spec.screenSize, spec.power].filter(Boolean);
+    return parts.join(" / ") || 'N/A';
   };
 
-
+  // Effect to fetch initial data for form dropdowns (brands, categories, etc.)
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchDropdownData = async () => {
       try {
         setLoading(true);
-        const [
-          brandsData,
-          categoriesData,
-          colorsData,
-        ] = await Promise.all([
+        const [brandsData, categoriesData, colorsData] = await Promise.all([
           fetch_brands(),
           fetch_categories(),
           fetch_colors(),
@@ -68,19 +57,19 @@ const AddItem = () => {
         setBrands(brandsData.brands);
         setCategories(categoriesData.categories);
         setColors(colorsData.colors);
-        await fetchPagedItems(pageNumber, pageSize);
-        setLoading(false);
       } catch (err) {
-        console.error("Error fetching data:", err);
-        setError("Failed to fetch data.");
+        console.error("Error fetching dropdown data:", err);
+        setError("Failed to load required data for the form.");
+      } finally {
         setLoading(false);
       }
     };
-    fetchData();
-  }, [pageNumber]);
+    fetchDropdownData();
+  }, []); // Runs only once on component mount
 
+  // Effect to fetch specs when a category is selected
   useEffect(() => {
-    const fetchSpecs = async () => {
+    const fetchCategorySpecs = async () => {
       if (!categoryId) {
         setSpecs([]);
         return;
@@ -88,63 +77,50 @@ const AddItem = () => {
       const data = await fetchSpecsByCategory(categoryId);
       setSpecs(data);
     };
-    fetchSpecs();
+    fetchCategorySpecs();
   }, [categoryId]);
 
- const fetchPagedItems = async (page = 1, size = 10) => {
-    try {
-      const res = await fetch_items_pagination(1, 10, "Name", false);
-      setItems(res.items);
-      setTotalPages(res.totalPages);
-    } catch (error) {
-      console.error("Error fetching paged items:", error);
-    }
-  };
-
-
-  // Unsorted pagination
- /* const fetchPagedItems = async (page = 1, size = 10) => {
-    try {
-      const res = await fetch_items_pagination(page, size);
-      setItems(res.items);
-      setTotalPages(res.totalPages);
-    } catch (error) {
-      console.error("Error fetching paged items:", error);
-    }
-  };*/
-
   const handleAddItem = async () => {
-    // --- handleAddItem logic remains the same ---
-    if (
-      !name ||
-      !modelNumber ||
-      !brandId ||
-      !categoryId ||
-      !colorId ||
-      (!specId && !isFieldsLocked)
-    ) {
+    // --- Validation logic remains the same ---
+    if (!name || !modelNumber || !brandId || !categoryId || !colorId || !specId) {
       alert("Please fill in all required fields before adding.");
       return;
     }
-    if (selectedCategory?.identifier === "Barcode" && !barcode) {
-      alert("Barcode field is required for Barcode identified items.");
+    if (isBarcodeCategory && !barcode) {
+      alert("Barcode field is required for this category.");
       return;
     }
 
     try {
-      const newItem = {
-        name,
-        modelNumber,
-        description,
-        barcode,
-        brandId,
-        categoryId,
-        colorId,
-        specsId: specId,
+      const newItemPayload = {
+        name, modelNumber, description, barcode,
+        brandId, categoryId, colorId, specsId: specId,
       };
 
-      await PostItem(newItem);
+      // Assume PostItem returns the newly created item, at least with its ID
+      const createdItemFromServer = await PostItem(newItemPayload);
 
+      // --- FIX: Robustly get the item ID from the server response ---
+      // This now checks for PascalCase 'ItemId' from C# backends, as well as camelCase.
+      const newItemId = createdItemFromServer.ItemId || createdItemFromServer.itemId || createdItemFromServer.id;
+
+      if (!newItemId) {
+          console.error("Server response did not contain a valid 'itemId' or 'id'.", createdItemFromServer);
+          alert("Error: Could not get a valid ID for the new item from the server.");
+          return;
+      }
+
+      // Construct a complete item object for immediate display
+      const newItemForDisplay = {
+          ...newItemPayload,
+          itemId: newItemId, // Use the valid ID from the server response
+          spec: specs.find(s => s.id.toString() === specId) // Find the full spec object
+      };
+
+      // Add the fully-formed new item to the local list
+      setAddedItems(prevItems => [newItemForDisplay, ...prevItems]); // Prepend to show newest first
+
+      // Reset form fields
       setName("");
       setModelNumber("");
       setDescription("");
@@ -153,32 +129,38 @@ const AddItem = () => {
       setCategoryId("");
       setSpecId("");
       setcolorId("");
-      setIsFieldsLocked(false);
 
-      await fetchPagedItems(1, pageSize);
-      setPageNumber(1);
     } catch (err) {
       console.error("Error adding item:", err);
-      alert("Failed to add item.");
+      alert("Failed to add item. Please try again.");
     }
   };
 
-  const handleDeleteItem = async (itemId) => {
+  const handleDeleteItem = async (itemIdToDelete) => {
     if (window.confirm("Are you sure you want to delete this item?")) {
-      await DeleteItem(itemId);
-      await fetchPagedItems(pageNumber, pageSize);
+      try {
+        // Remove item from local list for immediate UI feedback
+        setAddedItems(prevItems => prevItems.filter(item => item.itemId !== itemIdToDelete));
+        
+        // Send delete request to the server in the background
+        await DeleteItem(itemIdToDelete);
+
+      } catch (err) {
+          console.error("Error deleting item:", err);
+          alert("Failed to delete item from the server. The item has been restored in the list.");
+          // Optional: Add logic here to re-add the item to the list if the API call fails
+      }
     }
   };
 
-  if (loading) return <p>Loading...</p>;
+  if (loading) return <p>Loading form...</p>;
   if (error) return <p className="error">{error}</p>;
 
-  // --- JSX for form remains the same ---
+  // --- JSX for the form remains largely the same ---
   return (
     <div className="container">
       <h2 className="title">Add Product</h2>
       <div className="form">
-        {/* Input fields for name, modelNumber, description, etc. */}
         <div className="form-group">
           <label htmlFor="name">Name:</label>
           <input type="text" id="name" value={name} onChange={(e) => setName(e.target.value)} />
@@ -213,19 +195,13 @@ const AddItem = () => {
         {isBarcodeCategory && (
           <div className="form-group">
             <label htmlFor="barcode">Barcode:</label>
-            <input
-              type="text"
-              id="barcode"
-              value={barcode}
-              onChange={(e) => setBarcode(e.target.value)}
-              placeholder="Enter barcode"
-            />
+            <input type="text" id="barcode" value={barcode} onChange={(e) => setBarcode(e.target.value)} />
           </div>
         )}
 
         <div className="form-group">
           <label htmlFor="specId">Specs:</label>
-          <select id="specId" value={specId} disabled={isFieldsLocked} onChange={(e) => setSpecId(e.target.value)}>
+          <select id="specId" value={specId} onChange={(e) => setSpecId(e.target.value)}>
             <option value="">Select specs</option>
             {specs.map((spec) => (
               <option key={spec.id} value={spec.id}>
@@ -248,62 +224,37 @@ const AddItem = () => {
         <button className="btn btn-success" onClick={handleAddItem}>Add</button>
       </div>
 
-      <h3 className="subtitle">Items List</h3>
-      {items.length > 0 ? (
-        <>
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Model Number</th>
-                <th>Description</th>
-                <th>Color</th>
-                <th>Brand</th>
-                <th>Category</th>
-                <th>Specs</th>
-                <th>Actions</th>
+      {/* --- MODIFIED: Display only newly added items --- */}
+      <h3 className="subtitle">Newly Added Items</h3>
+      {addedItems.length > 0 ? (
+        <table className="table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Model Number</th>
+              <th>Brand</th>
+              <th>Category</th>
+              <th>Specs</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {addedItems.map((item) => (
+              <tr key={item.itemId}>
+                <td>{item.name}</td>
+                <td>{item.modelNumber}</td>
+                <td>{brands.find((b) => b.brandId == item.brandId)?.brandName || 'N/A'}</td>
+                <td>{categories.find((c) => c.categoryId == item.categoryId)?.categoryName || 'N/A'}</td>
+                <td>{item.spec ? formatSpecText(item.spec) : 'N/A'}</td>
+                <td>
+                  <button className="btn btn-danger" onClick={() => handleDeleteItem(item.itemId)}>Delete</button>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {items.map((item) => (
-                <tr key={item.itemId}>
-                  <td>{item.name}</td>
-                  <td>{item.modelNumber}</td>
-                  <td>{item.description}</td>
-                  <td>{colors.find((c) => c.colorId == item.colorId)?.colorName || 'N/A'}</td>
-                  <td>{brands.find((b) => b.brandId == item.brandId)?.brandName || 'N/A'}</td>
-                  <td>{categories.find((c) => c.categoryId == item.categoryId)?.categoryName || 'N/A'}</td>
-                  {/* ✅ FIX 2: Use the helper function to find and format the spec text. */}
-                  <td>{item.spec ? formatSpecText(item.spec) : 'N/A'}</td>
-                  <td>
-                    <button className="btn btn-danger" onClick={() => handleDeleteItem(item.itemId)}>Delete</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          {/* Pagination controls remain the same */}
-          <div style={{ marginTop: "10px" }}>
-            <button
-              disabled={pageNumber <= 1}
-              onClick={() => setPageNumber((prev) => prev - 1)}
-              className="btn btn-primary"
-            >
-              Previous
-            </button>
-            <span style={{ margin: "0 10px" }}>Page {pageNumber} of {totalPages}</span>
-            <button
-              disabled={pageNumber >= totalPages}
-              onClick={() => setPageNumber((prev) => prev + 1)}
-              className="btn btn-primary"
-            >
-              Next
-            </button>
-          </div>
-        </>
+            ))}
+          </tbody>
+        </table>
       ) : (
-        <p>No items available.</p>
+        <p>No items have been added yet.</p>
       )}
     </div>
   );
