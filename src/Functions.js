@@ -15,6 +15,25 @@ export const transferimei_url = "http://localhost:5257/api/TransferStock/transfe
 export const transferserial_url = "http://localhost:5257/api/TransferStock/transfer-serial-stock"
 export const transferbarcode_url = "http://localhost:5257/api/TransferStock/transfer-stock"
 
+
+
+//Add color
+
+
+const post_color = async (colorData) => {
+  try {
+    const response = await axios.post(get_colors, colorData);
+    return response.data;
+  } catch (error) {
+    console.error("Error posting color:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+export default post_color;
+
+
+
 //Get Employees
 
 export const fetch_employees = async () => {
@@ -208,6 +227,15 @@ export const fetch_supplier_item = async () => {
   }
 };
 
+//Delete color 
+export const delete_color = async (id) => {
+  try {
+    await axios.delete(`http://localhost:5257/api/colors/${id}`);
+  } catch (error) {
+    console.error("Failed to delete color:", error);
+    throw error;
+  }
+};
 
  //Get Brands
  
