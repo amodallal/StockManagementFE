@@ -14,8 +14,43 @@ export const get_roles = "http://localhost:5257/api/role"
 export const transferimei_url = "http://localhost:5257/api/TransferStock/transfer-imei-stock"
 export const transferserial_url = "http://localhost:5257/api/TransferStock/transfer-serial-stock"
 export const transferbarcode_url = "http://localhost:5257/api/TransferStock/transfer-stock"
+export const Specsurl = "http://localhost:5257/api/specs";
+
+//Add/Delete specs 
 
 
+
+export const fetchSpecs = async () => {
+  const response = await fetch(Specsurl);
+  return await response.json();
+};
+
+export const addSpec = async (spec) => {
+  const response = await fetch(Specsurl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(spec),
+  });
+  return await response.json();
+};
+
+export const deleteSpec = async (id) => {
+  const response = await fetch(`${Specsurl}/${id}`, {
+    method: "DELETE",
+  });
+  return response.ok;
+};
+
+
+export async function getSpecsByCategory(categoryId) {
+  try {
+    const response = await fetch(`${Specsurl}/GetByCategory?categoryId=${categoryId}`);
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching specs:", error);
+    return [];
+  }
+}
 
 //Add color
 
@@ -254,7 +289,7 @@ export const delete_color = async (id) => {
 };
 
 
-//GetSpecsbyCategory
+
 
 export const fetchCategories = async () => {
   try {
@@ -269,7 +304,7 @@ export const fetchCategories = async () => {
     return [];
   }
 };
-
+//GetSpecsbyCategory
 export const fetchSpecsByCategory = async (categoryId) => {
   try {
     const res = await fetch(`http://localhost:5257/api/specs/GetByCategory?categoryId=${categoryId}`);

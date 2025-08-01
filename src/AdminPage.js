@@ -3,8 +3,8 @@ import AddProducts from './AddProducts';
 import AddEmployee from './AddEmployee';
 import AddItems from './AddItems';
 import AddColor from './AddColor';
-import AddCapacity from './AddCapacity'; // Import the new component
 import AddBrand from './AddBrand'; // Import the new component
+import AddSpecs from './AddSpecs';
 import './styles.css';
 
 
@@ -26,7 +26,7 @@ const AdminPage = () => {
         return 'Items Management';
       case 'AddColor':
         return 'Color Management';
-      case 'AddCapacity':
+      case 'AddSpecs':
         return 'Capacity Management';
       case 'AddBrand': // Add case for the new page
         return 'Brand Management';
@@ -93,13 +93,13 @@ const AdminPage = () => {
               
               <li>
                 <div
-                  onClick={() => setActivePage('s')}
-                  className={`menu-item ${activePage === 'AddCapacity' ? 'active-main' : ''}`}
+                  onClick={() => setActivePage('AddSpecs')}
+                  className={`menu-item ${activePage === 'AddSpecs' ? 'active-main' : ''}`}
                 >
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M12 12m-10 0a10 10 0 1 0 20 0a10 10 0 1 0 -20 0"></path><path d="M12 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"></path><path d="M13.41 10.59l4.59 -4.59"></path><path d="M7 12a5 5 0 0 1 5 -5"></path>
 </svg>
-                  <span>Add Capacity</span>
+                  <span>Add Specs</span>
                 </div>
               </li>
 
@@ -141,7 +141,7 @@ const AdminPage = () => {
             {activePage === 'AddEmployee' && <AddEmployee />}
             {activePage === 'AddItems' && <AddItems />}
             {activePage === 'AddColor' && <AddColor />}
-            {activePage === 'AddCapacity' && <AddCapacity />}
+            {activePage === 'AddSpecs' && <AddSpecs />}
             {activePage === 'AddBrand' && <AddBrand />} 
             {!activePage && (
               <div className="page-content welcome-message">

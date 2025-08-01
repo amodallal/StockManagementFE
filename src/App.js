@@ -11,6 +11,7 @@ import AdminPage from './AdminPage';
 import PlaceOrder from './PlaceOrder';
 import CancelOrder from './CancelOrder';
 import ReturnItems from './ReturnItems.js';
+import AddSpecs from './AddSpecs.js';
 import './App.css';
 import './styles.css';  // Import the global CSS file
 import Login from './login';
@@ -25,6 +26,7 @@ function App() {
         <Route path="/AddEmployee" element={<AddEmployee  />} />
         <Route path="/AddItems" element={<AddItems  />} />
         <Route path="/AddCapacity" element={<AddCapacity  />} />
+        <Route path="/AddSpecs" element={<AddSpecs  />} />
         <Route path="/BatchAddItems" element={<BatchAddItems  />} />
         <Route path="/TransferStock" element={<TransferStock  />} />
         <Route path="/PlaceOrder" element={<PlaceOrder  />} />
